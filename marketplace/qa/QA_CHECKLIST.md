@@ -2,22 +2,38 @@
 
 Quality assurance gates for products in the Ninobyte marketplace.
 
+> **Note (v0.1.1)**: The canonical marketplace is now at `/.claude-plugin/marketplace.json` following official Claude Code conventions. See [VALIDATION_LOG.md](../../docs/canonical/VALIDATION_LOG.md) entry VL-20251219-005.
+
 ---
 
 ## Pre-Listing Checklist
 
-Every product must pass these checks before being added to `marketplace.json`.
+Every product must pass these checks before being added to `.claude-plugin/marketplace.json`.
+
+### Plugin Structure (Official Format)
+
+- [ ] **Plugin directory exists** at `products/claude-code-plugins/<plugin-name>/`
+- [ ] **Plugin manifest exists** at `.claude-plugin/plugin.json`
+  - [ ] `name` field present (kebab-case)
+  - [ ] `version` field present (semver)
+  - [ ] `description` field present
+  - [ ] `author.name` field present
+- [ ] **Skills directory exists** at `skills/<skill-name>/` within plugin
+- [ ] **SKILL.md has valid frontmatter**:
+  - [ ] `name` field (lowercase, hyphens)
+  - [ ] `description` field (single line recommended)
 
 ### Documentation
 
 - [ ] **README.md exists** and includes:
   - [ ] Product description
-  - [ ] Installation instructions
+  - [ ] Installation instructions (plugin install command)
   - [ ] Usage examples
   - [ ] Known limitations
   - [ ] Version information
 
-- [ ] **Primary contract exists** (SKILL.md for skill packs, manifest for others)
+- [ ] **SKILL.md exists** with:
+  - [ ] YAML frontmatter (name + description)
   - [ ] Purpose clearly stated
   - [ ] Scope boundaries defined
   - [ ] Security posture documented
@@ -58,30 +74,28 @@ Every product must pass these checks before being added to `marketplace.json`.
 
 - [ ] **VALIDATION_LOG.md updated**
   - [ ] New or updated validation entry
-  - [ ] Platform-dependent claims either validated or marked [UNVERIFIED]
+  - [ ] Platform-dependent claims validated against official sources
 
-- [ ] **[UNVERIFIED] tags present where needed**
-  - [ ] All unvalidated platform claims marked
-  - [ ] Validation checklist created for pending items
+- [ ] **Follows official conventions**
+  - [ ] SKILL.md format per https://github.com/anthropics/skills
+  - [ ] Plugin structure per https://code.claude.com/docs/en/plugins
+  - [ ] Marketplace schema per https://code.claude.com/docs/en/plugin-marketplaces
 
 ### Marketplace Entry
 
-- [ ] **marketplace.json updated**
-  - [ ] Product entry added/updated
-  - [ ] All required fields populated
+- [ ] **/.claude-plugin/marketplace.json updated**
+  - [ ] Plugin entry added with `name` and `source`
+  - [ ] Optional fields populated (description, version, keywords)
   - [ ] Version matches CHANGELOG
-  - [ ] Paths are correct
-
-- [ ] **Tags are appropriate**
-  - [ ] Relevant to product functionality
-  - [ ] Consistent with existing tag vocabulary
+  - [ ] Source path is correct
 
 ---
 
 ## Product-Type Specific Checks
 
-### Skill Packs
+### Skills (within Plugins)
 
+- [ ] SKILL.md has valid YAML frontmatter
 - [ ] SKILL.md defines all modes
 - [ ] Each mode has:
   - [ ] Trigger phrase
@@ -97,11 +111,12 @@ Every product must pass these checks before being added to `marketplace.json`.
 - [ ] Permission requirements documented
 - [ ] Resource access minimal
 
-### Claude Code Plugins (Future)
+### Claude Code Plugins
 
-- [ ] Plugin manifest valid
-- [ ] Hook definitions complete
-- [ ] Permission requirements documented
+- [ ] `.claude-plugin/plugin.json` valid JSON
+- [ ] `name` is kebab-case
+- [ ] `skills/` directory contains valid skills
+- [ ] Optional: `commands/`, `agents/`, `hooks/` directories if used
 
 ---
 
@@ -122,7 +137,7 @@ Every product must pass these checks before being added to `marketplace.json`.
 
 4. **Final Approval**
    - All checklist items pass
-   - Marketplace.json entry correct
+   - `/.claude-plugin/marketplace.json` entry correct
    - CHANGELOG updated
 
 ---
@@ -138,6 +153,21 @@ After a product is listed:
 
 ---
 
+## Validation Commands
+
+```bash
+# Validate plugin structure
+/plugin validate ./products/claude-code-plugins/<plugin-name>
+
+# Add marketplace locally
+/plugin marketplace add ./
+
+# Install plugin from marketplace
+/plugin install <plugin-name>@ninobyte-marketplace
+```
+
+---
+
 ## Checklist Sign-Off
 
 ```
@@ -148,6 +178,7 @@ Reviewer: _______________
 
 [ ] All required checks pass
 [ ] Security review completed
+[ ] Official conventions validated
 [ ] Ready for marketplace listing
 
 Signature: _______________

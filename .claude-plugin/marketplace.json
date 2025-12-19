@@ -1,0 +1,27 @@
+{
+  "name": "ninobyte-marketplace",
+  "owner": {
+    "name": "Ninobyte",
+    "email": "support@ninobyte.io"
+  },
+  "metadata": {
+    "description": "Enterprise-grade Claude Code plugins for software engineering workflows",
+    "version": "0.1.1"
+  },
+  "plugins": [
+    {
+      "name": "ninobyte-senior-dev-brain",
+      "source": "./products/claude-code-plugins/ninobyte-senior-dev-brain",
+      "description": "Enterprise software engineering skill with Architecture Review, Implementation Planning, Code Review, Incident Triage, and ADR Writer modes.",
+      "version": "0.1.1",
+      "license": "MIT",
+      "keywords": [
+        "engineering",
+        "architecture",
+        "code-review",
+        "security"
+      ],
+      "category": "engineering"
+    }
+  ]
+}

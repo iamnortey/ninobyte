@@ -7,6 +7,22 @@ on:
     branches: [main]
 
 jobs:
+  validate-artifacts:
+    name: Validate Artifacts (Official Conventions)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Run artifact validation
+        run: python scripts/ci/validate_artifacts.py
+
   validate-structure:
     name: Validate Repository Structure
     runs-on: ubuntu-latest
@@ -52,14 +68,14 @@ jobs:
             echo "✅ Found: $doc"
           done
 
-      - name: Verify marketplace structure
+      - name: Verify official marketplace location
         run: |
-          echo "Checking marketplace structure..."
-          if [ ! -f "marketplace/marketplace.json" ]; then
-            echo "❌ Missing marketplace/marketplace.json"
+          echo "Checking official marketplace location..."
+          if [ ! -f ".claude-plugin/marketplace.json" ]; then
+            echo "❌ Missing .claude-plugin/marketplace.json"
             exit 1
           fi
-          echo "✅ Found: marketplace/marketplace.json"
+          echo "✅ Found: .claude-plugin/marketplace.json"
 
           if [ ! -f "marketplace/qa/QA_CHECKLIST.md" ]; then
             echo "❌ Missing marketplace/qa/QA_CHECKLIST.md"
@@ -78,60 +94,68 @@ jobs:
             echo "✅ Valid JSON: $file"
           done
 
-  validate-products:
-    name: Validate Products
+  validate-plugin:
+    name: Validate Claude Code Plugin
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Verify skill pack structure
+      - name: Verify plugin structure
         run: |
-          echo "Checking Senior Developer Brain skill pack..."
-          base="products/skill-packs/senior-developer-brain"
+          echo "Checking ninobyte-senior-dev-brain plugin..."
+          base="products/claude-code-plugins/ninobyte-senior-dev-brain"
 
-          required_files=(
-            "$base/README.md"
-            "$base/SKILL.md"
-            "$base/CHANGELOG.md"
-          )
+          # Check plugin manifest
+          if [ ! -f "$base/.claude-plugin/plugin.json" ]; then
+            echo "❌ Missing plugin.json"
+            exit 1
+          fi
+          echo "✅ Found: plugin.json"
 
-          for file in "${required_files[@]}"; do
-            if [ ! -f "$file" ]; then
-              echo "❌ Missing: $file"
+          # Check skill
+          if [ ! -f "$base/skills/senior-developer-brain/SKILL.md" ]; then
+            echo "❌ Missing SKILL.md in plugin"
+            exit 1
+          fi
+          echo "✅ Found: SKILL.md in plugin"
+
+          # Check README and LICENSE
+          for file in "README.md" "LICENSE" "CHANGELOG.md"; do
+            if [ ! -f "$base/$file" ]; then
+              echo "❌ Missing: $base/$file"
               exit 1
             fi
-            echo "✅ Found: $file"
+            echo "✅ Found: $base/$file"
           done
 
-      - name: Verify patterns exist
+      - name: Verify canonical skill
         run: |
-          base="products/skill-packs/senior-developer-brain/patterns"
-          count=$(find "$base" -name "*.md" -type f | wc -l)
-          if [ "$count" -lt 3 ]; then
-            echo "❌ Expected at least 3 pattern files, found $count"
+          echo "Checking canonical skill..."
+          skill="skills/senior-developer-brain/SKILL.md"
+
+          if [ ! -f "$skill" ]; then
+            echo "❌ Missing canonical skill: $skill"
             exit 1
           fi
-          echo "✅ Found $count pattern files"
+          echo "✅ Found: $skill"
 
-      - name: Verify examples exist
-        run: |
-          base="products/skill-packs/senior-developer-brain/examples"
-          count=$(find "$base" -name "*.md" -type f | wc -l)
-          if [ "$count" -lt 2 ]; then
-            echo "❌ Expected at least 2 example files, found $count"
+          # Check for YAML frontmatter
+          if ! head -1 "$skill" | grep -q "^---"; then
+            echo "❌ SKILL.md missing YAML frontmatter"
             exit 1
           fi
-          echo "✅ Found $count example files"
+          echo "✅ SKILL.md has YAML frontmatter"
 
-      - name: Verify test fixtures and goldens
+      - name: Verify test artifacts
         run: |
-          fixtures="products/skill-packs/senior-developer-brain/tests/fixtures"
-          goldens="products/skill-packs/senior-developer-brain/tests/goldens"
+          echo "Checking test artifacts..."
+          fixtures="skills/senior-developer-brain/tests/fixtures"
+          goldens="skills/senior-developer-brain/tests/goldens"
 
-          fixture_count=$(find "$fixtures" -name "*.md" -type f | wc -l)
-          golden_count=$(find "$goldens" -name "*.md" -type f | wc -l)
+          fixture_count=$(find "$fixtures" -name "*.md" -type f 2>/dev/null | wc -l)
+          golden_count=$(find "$goldens" -name "*.md" -type f 2>/dev/null | wc -l)
 
           if [ "$fixture_count" -lt 1 ]; then
             echo "❌ No test fixtures found"
@@ -166,15 +190,11 @@ jobs:
             "-----BEGIN.*PRIVATE KEY-----"
           )
 
-          found_issues=0
           for pattern in "${patterns[@]}"; do
-            # Search in all non-binary files, excluding common false positives
-            results=$(grep -riE "$pattern" --include="*.md" --include="*.json" --include="*.js" --include="*.ts" --include="*.py" --include="*.yml" --include="*.yaml" . 2>/dev/null | grep -v "placeholder" | grep -v "example" | grep -v "template" | grep -v "SECURITY.md" | grep -v ".gitignore" || true)
+            results=$(grep -riE "$pattern" --include="*.md" --include="*.json" --include="*.js" --include="*.ts" --include="*.py" --include="*.yml" --include="*.yaml" . 2>/dev/null | grep -v "placeholder" | grep -v "example" | grep -v "template" | grep -v "SECURITY.md" | grep -v ".gitignore" | grep -v "validate_artifacts.py" || true)
             if [ -n "$results" ]; then
               echo "⚠️ Potential secret pattern found: $pattern"
               echo "$results"
-              # Don't fail on patterns that might be in documentation
-              # Just warn - manual review needed
             fi
           done
 

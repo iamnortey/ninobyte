@@ -1,105 +1,135 @@
-# Installing Skill Packs in Claude Code
+# Installing Ninobyte Plugins in Claude Code
 
-**[UNVERIFIED]**: This guide documents best-known methods for using skill packs with Claude Code. The exact mechanism for loading custom skills/prompts in Claude Code has not been validated against official documentation. See `VALIDATION_LOG.md` entry VL-20251219-001.
+Official guide for using Ninobyte plugins with Claude Code.
+
+> **✅ Validated (v0.1.1)**: This guide follows official Claude Code plugin conventions per [VALIDATION_LOG.md](../canonical/VALIDATION_LOG.md) entries VL-20251219-004 and VL-20251219-005.
 
 ---
 
 ## Prerequisites
 
 - Claude Code installed and configured
-- Downloaded skill pack folder
+- Access to the Ninobyte repository
 
 ---
 
 ## Installation Methods
 
-### Method 1: Project-Level Instructions [UNVERIFIED]
+### Method 1: Via Ninobyte Marketplace (Recommended)
 
-Claude Code may support project-level configuration. Check for:
+The Ninobyte repository is a plugin marketplace. Add it and install plugins:
 
-1. A `.claude` or `.claudecode` directory in your project root
-2. Configuration files like `claude.json` or `instructions.md`
-
-If supported:
 ```bash
-# Create config directory (if supported)
-mkdir -p .claude
+# Add the Ninobyte marketplace (from local clone)
+/plugin marketplace add /path/to/ninobyte
 
-# Copy skill files
-cp -r path/to/senior-developer-brain/SKILL.md .claude/
-cp -r path/to/senior-developer-brain/patterns/ .claude/patterns/
+# Or if you're inside the ninobyte directory
+/plugin marketplace add ./
+
+# List available plugins
+/plugin marketplace list ninobyte-marketplace
+
+# Install a plugin
+/plugin install ninobyte-senior-dev-brain@ninobyte-marketplace
 ```
 
-### Method 2: Direct Reference in Prompts
+### Method 2: Direct Plugin Installation
 
-Reference the skill pack directly in your prompts:
+Install a plugin directly from its directory:
 
-```
-Please read and follow the instructions in ./docs/skills/SKILL.md
-
-Mode: Code Review
-
-Review the changes in src/api/handlers.ts
+```bash
+/plugin install /path/to/ninobyte/products/claude-code-plugins/ninobyte-senior-dev-brain
 ```
 
-### Method 3: Session Initialization
+### Method 3: Validate Before Installing
 
-At the start of a Claude Code session:
+Validate the plugin structure before installation:
 
-1. Ask Claude to read the SKILL.md file
-2. Specify which mode you want to use
-3. Proceed with your task
-
-Example:
-```
-Read ./skills/senior-developer-brain/SKILL.md and operate in "Implementation Planning" mode for this session.
+```bash
+/plugin validate /path/to/ninobyte/products/claude-code-plugins/ninobyte-senior-dev-brain
 ```
 
 ---
 
-## Validation Needed
+## Verification
 
-The following needs validation against official Claude Code documentation:
+After installation, verify the plugin is loaded:
 
-- [ ] Does Claude Code support project-level custom instructions?
-- [ ] What is the correct directory/file structure for configuration?
-- [ ] Are there official skill/prompt loading mechanisms?
-- [ ] How do custom prompts interact with Claude Code's built-in capabilities?
+```bash
+# List installed plugins
+/plugin list
 
-See `VALIDATION_LOG.md` for validation checklist and status.
+# Check plugin details
+/plugin info ninobyte-senior-dev-brain
+```
 
 ---
 
-## File Organization Recommendation
+## Using Installed Skills
 
-Until official patterns are validated, organize skill files in your project:
+Once installed, skills are automatically available. Simply use the mode trigger:
 
 ```
-your-project/
-├── .claude/                    # If supported
-│   └── instructions.md
-├── docs/
-│   └── skills/
-│       └── senior-developer-brain/
-│           ├── SKILL.md
-│           └── patterns/
-└── src/
+Mode: Architecture Review
+
+Review the following system design...
 ```
+
+The skill will be invoked automatically based on task context.
+
+---
+
+## Available Plugins
+
+### ninobyte-senior-dev-brain
+
+Enterprise software engineering skill with:
+- Architecture Review mode
+- Implementation Planning mode
+- Code Review mode
+- Incident Triage mode
+- ADR Writer mode
+
+**Security Features**:
+- Enforces security-first review posture
+- Flags authentication/crypto anti-patterns
+- Refuses hand-rolled security implementations
 
 ---
 
 ## Troubleshooting
 
-| Issue | Possible Solution |
-|-------|-------------------|
-| Claude Code ignores skill | Try explicit file reading instruction |
-| Mode not recognized | Quote mode name exactly as in SKILL.md |
-| Patterns not followed | Reference specific pattern files explicitly |
+| Issue | Solution |
+|-------|----------|
+| Plugin not found | Verify path and marketplace is added |
+| Skill not activating | Use exact mode trigger from SKILL.md |
+| Validation errors | Run `/plugin validate` and check output |
+| Marketplace not loading | Verify `.claude-plugin/marketplace.json` exists |
+
+---
+
+## Plugin Structure Reference
+
+Official plugin structure:
+```
+plugin-name/
+├── .claude-plugin/
+│   └── plugin.json           # Plugin manifest
+├── skills/
+│   └── skill-name/
+│       └── SKILL.md          # Skill definition
+├── commands/                  # Optional slash commands
+├── agents/                    # Optional agents
+├── hooks/                     # Optional hooks
+└── README.md
+```
 
 ---
 
 ## See Also
 
-- [Senior Developer's Brain README](../../products/skill-packs/senior-developer-brain/README.md)
-- [SKILL.md](../../products/skill-packs/senior-developer-brain/SKILL.md)
+- [Official Claude Code Plugins Docs](https://code.claude.com/docs/en/plugins)
+- [Official Plugin Reference](https://code.claude.com/docs/en/plugins-reference)
+- [Official Marketplaces Docs](https://code.claude.com/docs/en/plugin-marketplaces)
+- [Canonical Skill Location](../../skills/senior-developer-brain/)
 - [VALIDATION_LOG.md](../canonical/VALIDATION_LOG.md)

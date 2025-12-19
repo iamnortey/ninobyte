@@ -9,8 +9,13 @@ Evidence trail for all official source validations.
 | Source | URL | Purpose |
 |--------|-----|---------|
 | Anthropic GitHub | https://github.com/anthropics | SDKs, examples, official implementations |
+| **Anthropic Skills Repo** | https://github.com/anthropics/skills | **Official SKILL.md format + examples** |
 | Claude Platform Docs | https://platform.claude.com/docs/en/home | API docs, capabilities, best practices |
+| **Claude Code Plugins** | https://code.claude.com/docs/en/plugins | **Official plugin structure** |
+| **Claude Code Plugin Reference** | https://code.claude.com/docs/en/plugins-reference | **plugin.json manifest schema** |
+| **Claude Code Marketplaces** | https://code.claude.com/docs/en/plugin-marketplaces | **marketplace.json schema** |
 | Anthropic Engineering | https://www.anthropic.com/engineering | Technical blog, architecture insights |
+| **Agent Skills Overview** | https://www.anthropic.com/engineering/equipping-agents-for-the-real-world-with-agent-skills | **Skills architecture + use cases** |
 | Anthropic Research | https://www.anthropic.com/research | Research papers, model capabilities |
 | Anthropic Learn | https://www.anthropic.com/learn | Tutorials, guides |
 | Claude Resources | https://claude.com/resources/use-cases | Use cases, examples |
@@ -136,9 +141,167 @@ This validation was performed using knowledge base information. Direct web acces
 
 ---
 
+### VL-20251219-003
+
+**Date**: 2025-12-19
+**Author**: Claude Agent (live web validation)
+**Topic**: Official SKILL.md format validation
+
+**Sources Checked**:
+- URL: https://github.com/anthropics/skills
+- URL: https://www.anthropic.com/engineering/equipping-agents-for-the-real-world-with-agent-skills
+
+**Findings**:
+
+**SKILL.md Format (VALIDATED)**:
+1. Skills are **directories** containing a `SKILL.md` file
+2. YAML frontmatter is **REQUIRED** with exactly TWO mandatory fields:
+   - `name`: Unique identifier (lowercase, hyphens for spaces)
+   - `description`: Complete description of what the skill does and when to use it
+3. Format structure:
+   ```
+   ---
+   name: skill-identifier
+   description: What this skill does and when to use it
+   ---
+
+   # Skill Name
+
+   [Instructions, examples, and guidelines in markdown]
+   ```
+4. Skills can include supporting reference files and scripts alongside SKILL.md
+5. Progressive disclosure: metadata loads at startup, body loads when relevant, additional files load on demand
+
+**Platform Support**:
+- Claude.ai (Projects)
+- Claude Code
+- Claude Agent SDK
+- Claude Developer Platform
+
+**Impact**:
+- Our existing SKILL.md structure needs YAML frontmatter with `name` and `description` fields
+- v0.1 SKILL.md is missing required frontmatter - MUST BE UPDATED
+- Skill directory naming should match the `name` field (lowercase, hyphenated)
+
+**Status**: VALIDATED
+
+**Action Required**:
+- [x] Update skills/senior-developer-brain/SKILL.md with proper frontmatter
+- [x] Ensure `name: senior-developer-brain` and appropriate `description`
+
+---
+
+### VL-20251219-004
+
+**Date**: 2025-12-19
+**Author**: Claude Agent (live web validation)
+**Topic**: Official Claude Code Plugin structure validation
+
+**Sources Checked**:
+- URL: https://code.claude.com/docs/en/plugins
+- URL: https://code.claude.com/docs/en/plugins-reference
+
+**Findings**:
+
+**Plugin Directory Structure (VALIDATED)**:
+```
+my-plugin/
+├── .claude-plugin/
+│   └── plugin.json          # Plugin metadata (REQUIRED)
+├── commands/                 # Custom slash commands (optional)
+├── agents/                   # Custom agents (optional)
+├── skills/                   # Agent Skills (optional)
+│   └── my-skill/
+│       └── SKILL.md
+├── hooks/                    # Event handlers (optional)
+└── LICENSE, README.md, etc.
+```
+
+**plugin.json Required Fields**:
+- `name` (string): Unique identifier in kebab-case - **REQUIRED**
+
+**plugin.json Recommended Fields**:
+- `version` (string): Semantic versioning
+- `description` (string): Purpose explanation
+- `author` (object): `{ "name": "...", "email": "...", "url": "..." }`
+- `homepage` (string): Documentation URL
+- `repository` (string): Source code URL
+- `license` (string): License identifier (e.g., "MIT")
+- `keywords` (array): Discovery tags
+
+**Path Requirements**:
+- All paths in plugin.json must be relative and begin with `./`
+- Use `${CLAUDE_PLUGIN_ROOT}` for dynamic path resolution in hooks/MCP configs
+
+**Impact**:
+- v0.1 had no plugin structure - MUST CREATE
+- Plugin must be at: `products/claude-code-plugins/ninobyte-senior-dev-brain/`
+- Plugin manifest at: `.claude-plugin/plugin.json`
+- Skills bundled inside plugin at: `skills/senior-developer-brain/`
+
+**Status**: VALIDATED
+
+**Action Required**:
+- [x] Create plugin directory structure
+- [x] Create `.claude-plugin/plugin.json` with required fields
+- [x] Bundle skill into plugin's `skills/` directory
+
+---
+
+### VL-20251219-005
+
+**Date**: 2025-12-19
+**Author**: Claude Agent (live web validation)
+**Topic**: Official Plugin Marketplace schema validation
+
+**Sources Checked**:
+- URL: https://code.claude.com/docs/en/plugin-marketplaces
+
+**Findings**:
+
+**Marketplace File Location (VALIDATED)**:
+- File MUST be at: `.claude-plugin/marketplace.json` (repository root)
+
+**Required Fields**:
+1. `name` (string): Marketplace identifier (kebab-case, no spaces)
+2. `owner` (object): `{ "name": "...", "email": "..." }`
+3. `plugins` (array): List of available plugins
+
+**Plugin Entry Required Fields**:
+- `name` (string): Plugin identifier (kebab-case)
+- `source` (string): Location (relative path, GitHub repo, or git URL)
+
+**Optional Marketplace Fields**:
+- `metadata.description`: Brief marketplace overview
+- `metadata.version`: Marketplace version tracking
+- `metadata.pluginRoot`: Base path for relative plugin sources
+
+**Optional Plugin Entry Fields**:
+- `description`, `version`, `author`, `homepage`, `repository`, `license`, `keywords`, `category`
+- `tags` (array): Discovery tags
+- `strict` (boolean): Whether plugin.json validation is required
+
+**Installation Commands**:
+- Add marketplace: `/plugin marketplace add owner/repo` or `/plugin marketplace add ./path`
+- Install plugin: `/plugin install plugin-name@marketplace-name`
+
+**Impact**:
+- v0.1 had custom `marketplace/marketplace.json` - MUST MIGRATE to `.claude-plugin/marketplace.json`
+- Schema was completely wrong - MUST USE OFFICIAL SCHEMA
+- Old marketplace should be deprecated with pointer to new location
+
+**Status**: VALIDATED
+
+**Action Required**:
+- [x] Create `.claude-plugin/marketplace.json` with official schema
+- [x] Deprecate `marketplace/marketplace.json`
+- [x] Update installation tutorials
+
+---
+
 ## Pending Validations
 
 | ID | Topic | Priority | Assigned |
 |----|-------|----------|----------|
-| VL-20251219-001 | Skills/MCP/Plugin schemas | HIGH | Partially addressed by VL-20251219-002 |
-| VL-20251219-002 | Manual web verification | HIGH | Manual validation required |
+| VL-20251219-001 | Skills/MCP/Plugin schemas | HIGH | ✅ RESOLVED by VL-20251219-003/004/005 |
+| VL-20251219-002 | Manual web verification | HIGH | ✅ RESOLVED by VL-20251219-003/004/005 |
