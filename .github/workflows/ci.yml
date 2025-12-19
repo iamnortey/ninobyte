@@ -1,0 +1,199 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  validate-structure:
+    name: Validate Repository Structure
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Verify required root files
+        run: |
+          echo "Checking required root files..."
+          files=(
+            "README.md"
+            "LICENSE"
+            "SECURITY.md"
+            ".gitignore"
+            ".editorconfig"
+          )
+          for file in "${files[@]}"; do
+            if [ ! -f "$file" ]; then
+              echo "❌ Missing required file: $file"
+              exit 1
+            fi
+            echo "✅ Found: $file"
+          done
+
+      - name: Verify governance docs
+        run: |
+          echo "Checking governance documentation..."
+          docs=(
+            "docs/canonical/PROJECT_INSTRUCTIONS.md"
+            "docs/canonical/PINNED_PROJECT_PROMPT.md"
+            "docs/canonical/VALIDATION_LOG.md"
+            "docs/canonical/CHANGELOG.md"
+            "docs/architecture/THREAT_MODEL.md"
+            "ops/release/RELEASE_CHECKLIST.md"
+          )
+          for doc in "${docs[@]}"; do
+            if [ ! -f "$doc" ]; then
+              echo "❌ Missing governance doc: $doc"
+              exit 1
+            fi
+            echo "✅ Found: $doc"
+          done
+
+      - name: Verify marketplace structure
+        run: |
+          echo "Checking marketplace structure..."
+          if [ ! -f "marketplace/marketplace.json" ]; then
+            echo "❌ Missing marketplace/marketplace.json"
+            exit 1
+          fi
+          echo "✅ Found: marketplace/marketplace.json"
+
+          if [ ! -f "marketplace/qa/QA_CHECKLIST.md" ]; then
+            echo "❌ Missing marketplace/qa/QA_CHECKLIST.md"
+            exit 1
+          fi
+          echo "✅ Found: marketplace/qa/QA_CHECKLIST.md"
+
+      - name: Validate JSON syntax
+        run: |
+          echo "Validating JSON files..."
+          find . -name "*.json" -type f | while read file; do
+            if ! python3 -m json.tool "$file" > /dev/null 2>&1; then
+              echo "❌ Invalid JSON: $file"
+              exit 1
+            fi
+            echo "✅ Valid JSON: $file"
+          done
+
+  validate-products:
+    name: Validate Products
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Verify skill pack structure
+        run: |
+          echo "Checking Senior Developer Brain skill pack..."
+          base="products/skill-packs/senior-developer-brain"
+
+          required_files=(
+            "$base/README.md"
+            "$base/SKILL.md"
+            "$base/CHANGELOG.md"
+          )
+
+          for file in "${required_files[@]}"; do
+            if [ ! -f "$file" ]; then
+              echo "❌ Missing: $file"
+              exit 1
+            fi
+            echo "✅ Found: $file"
+          done
+
+      - name: Verify patterns exist
+        run: |
+          base="products/skill-packs/senior-developer-brain/patterns"
+          count=$(find "$base" -name "*.md" -type f | wc -l)
+          if [ "$count" -lt 3 ]; then
+            echo "❌ Expected at least 3 pattern files, found $count"
+            exit 1
+          fi
+          echo "✅ Found $count pattern files"
+
+      - name: Verify examples exist
+        run: |
+          base="products/skill-packs/senior-developer-brain/examples"
+          count=$(find "$base" -name "*.md" -type f | wc -l)
+          if [ "$count" -lt 2 ]; then
+            echo "❌ Expected at least 2 example files, found $count"
+            exit 1
+          fi
+          echo "✅ Found $count example files"
+
+      - name: Verify test fixtures and goldens
+        run: |
+          fixtures="products/skill-packs/senior-developer-brain/tests/fixtures"
+          goldens="products/skill-packs/senior-developer-brain/tests/goldens"
+
+          fixture_count=$(find "$fixtures" -name "*.md" -type f | wc -l)
+          golden_count=$(find "$goldens" -name "*.md" -type f | wc -l)
+
+          if [ "$fixture_count" -lt 1 ]; then
+            echo "❌ No test fixtures found"
+            exit 1
+          fi
+          echo "✅ Found $fixture_count fixture files"
+
+          if [ "$golden_count" -lt 1 ]; then
+            echo "❌ No golden files found"
+            exit 1
+          fi
+          echo "✅ Found $golden_count golden files"
+
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check for potential secrets
+        run: |
+          echo "Scanning for potential secrets..."
+
+          # Patterns that might indicate secrets
+          patterns=(
+            "password\s*[:=]"
+            "api_key\s*[:=]"
+            "secret\s*[:=]"
+            "token\s*[:=]"
+            "-----BEGIN.*PRIVATE KEY-----"
+          )
+
+          found_issues=0
+          for pattern in "${patterns[@]}"; do
+            # Search in all non-binary files, excluding common false positives
+            results=$(grep -riE "$pattern" --include="*.md" --include="*.json" --include="*.js" --include="*.ts" --include="*.py" --include="*.yml" --include="*.yaml" . 2>/dev/null | grep -v "placeholder" | grep -v "example" | grep -v "template" | grep -v "SECURITY.md" | grep -v ".gitignore" || true)
+            if [ -n "$results" ]; then
+              echo "⚠️ Potential secret pattern found: $pattern"
+              echo "$results"
+              # Don't fail on patterns that might be in documentation
+              # Just warn - manual review needed
+            fi
+          done
+
+          echo "✅ Secret scan complete (warnings require manual review)"
+
+      - name: Verify .gitignore includes secret patterns
+        run: |
+          echo "Checking .gitignore for secret patterns..."
+          required_patterns=(
+            ".env"
+            "*.pem"
+            "*.key"
+            "credentials"
+          )
+
+          for pattern in "${required_patterns[@]}"; do
+            if ! grep -q "$pattern" .gitignore; then
+              echo "⚠️ .gitignore might be missing pattern: $pattern"
+            else
+              echo "✅ .gitignore includes: $pattern"
+            fi
+          done
