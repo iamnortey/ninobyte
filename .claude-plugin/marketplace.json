@@ -11,7 +11,7 @@
   "plugins": [
     {
       "name": "ninobyte-senior-dev-brain",
-      "source": "./products/claude-code-plugins/ninobyte-senior-dev-brain",
+      "source": "../products/claude-code-plugins/ninobyte-senior-dev-brain",
       "description": "Enterprise software engineering skill with Architecture Review, Implementation Planning, Code Review, Incident Triage, and ADR Writer modes.",
       "license": "MIT",
       "keywords": [
