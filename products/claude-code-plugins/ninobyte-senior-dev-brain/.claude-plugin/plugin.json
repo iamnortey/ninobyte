@@ -1,6 +1,6 @@
 {
   "name": "ninobyte-senior-dev-brain",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "description": "Enterprise-grade software engineering skill with Architecture Review, Implementation Planning, Code Review, Incident Triage, and ADR Writer modes. Security-first design with explicit scope boundaries and auditable output formats.",
   "author": {
     "name": "Ninobyte"
