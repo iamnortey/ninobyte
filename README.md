@@ -21,7 +21,7 @@ ninobyte/
 
 ## Products
 
-### v0.1 — Senior Developer's Brain (Skill Pack)
+### v0.1.2 — Senior Developer's Brain
 
 A job system for enterprise software engineering execution. Modes include:
 - Architecture Review
@@ -30,7 +30,8 @@ A job system for enterprise software engineering execution. Modes include:
 - Incident Triage
 - ADR Writer
 
-See [products/skill-packs/senior-developer-brain/](products/skill-packs/senior-developer-brain/)
+**Canonical Location**: [skills/senior-developer-brain/](skills/senior-developer-brain/)
+**Claude Code Plugin**: [products/claude-code-plugins/ninobyte-senior-dev-brain/](products/claude-code-plugins/ninobyte-senior-dev-brain/)
 
 ## Getting Started
 
@@ -43,6 +44,7 @@ See [products/skill-packs/senior-developer-brain/](products/skill-packs/senior-d
 - [PROJECT_INSTRUCTIONS.md](docs/canonical/PROJECT_INSTRUCTIONS.md) — Mission, policies, validation requirements
 - [PINNED_PROJECT_PROMPT.md](docs/canonical/PINNED_PROJECT_PROMPT.md) — Execution contract for AI agents
 - [VALIDATION_LOG.md](docs/canonical/VALIDATION_LOG.md) — Official source validation evidence
+- [DISTRIBUTION_AND_DISCOVERY.md](docs/distribution/DISTRIBUTION_AND_DISCOVERY.md) — Installation, sync, and discovery
 
 ## Security
 

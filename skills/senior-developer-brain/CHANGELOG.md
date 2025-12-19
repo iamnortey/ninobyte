@@ -4,6 +4,31 @@ All notable changes to this skill will be documented here.
 
 ---
 
+## [0.1.2] - 2025-12-19
+
+### Why v0.1.2 Exists
+
+"Formatting Determinism" — ensures Architecture Review output passes strict formatting validation. Output previously passed security/content checks but failed on missing markdown heading tokens and inconsistent table formats.
+
+### Changed
+- Architecture Review output format now explicitly requires `##`/`###` heading tokens
+- Risks section changed from bullet list to markdown pipe table with columns: `| Risk | Likelihood | Impact | Mitigation |`
+- Added explicit Format Enforcement Rules to SKILL.md
+
+### Fixed
+- Missing markdown heading tokens in output specification
+- Concerns and Risks sections now enforce exact pipe table column structure
+
+### CI/Validation
+- `validate_artifacts.py` now enforces:
+  - All 9 required Architecture Review headings via regex
+  - Concerns table header: `| Priority | Concern | Impact | Recommendation |`
+  - Risks table header: `| Risk | Likelihood | Impact | Mitigation |`
+  - CRITICAL flags for: JWT in localStorage, Single EC2 instance, Shared PostgreSQL database
+- CI will fail if any format requirements are missing
+
+---
+
 ## [0.1.1] - 2025-12-19
 
 ### Why v0.1.1 Exists

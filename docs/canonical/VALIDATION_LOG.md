@@ -299,6 +299,48 @@ my-plugin/
 
 ---
 
+### VL-20251219-006
+
+**Date**: 2025-12-19
+**Author**: Claude Agent (v0.1.2 release)
+**Topic**: Formatting Determinism + Drift Enforcement
+
+**Sources Checked**:
+- Internal: `skills/senior-developer-brain/SKILL.md`
+- Internal: `scripts/ci/validate_artifacts.py`
+- Internal: `scripts/ops/sync_plugin_skills.py`
+
+**Findings**:
+
+1. **Format Enforcement (v0.1.2)**
+   - Architecture Review output format now strictly validated
+   - 9 required markdown headings checked via regex
+   - Concerns table: `| Priority | Concern | Impact | Recommendation |`
+   - Risks table: `| Risk | Likelihood | Impact | Mitigation |`
+   - CRITICAL flags enforced for: JWT localStorage, Single EC2, Shared PostgreSQL
+
+2. **Drift Prevention**
+   - `sync_plugin_skills.py` created with `--check` and `--sync` modes
+   - CI now fails if canonical and plugin copies diverge
+   - No auto-fix in CI; developers must run `--sync` locally
+
+3. **Distribution Surfaces**
+   - Canonical: `skills/senior-developer-brain/` (source of truth)
+   - Plugin: `products/claude-code-plugins/ninobyte-senior-dev-brain/skills/senior-developer-brain/` (synced copy)
+   - Legacy: `products/skill-packs/` (deprecated, removal in v0.2.0)
+
+**Impact**:
+- CI is now a hard gate against drift
+- Output format is deterministic and machine-verifiable
+- No new external platform assumptions introduced
+
+**Status**: VALIDATED
+
+**Action Required**:
+- None. All v0.1.2 changes are internal enforcement mechanisms.
+
+---
+
 ## Pending Validations
 
 | ID | Topic | Priority | Assigned |
