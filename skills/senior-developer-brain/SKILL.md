@@ -5,7 +5,7 @@ description: A structured execution framework for senior-level software engineer
 
 # Senior Developer's Brain
 
-**Version**: 0.1.1
+**Version**: 0.1.2
 **Type**: Job System for Enterprise Software Engineering
 
 ---
@@ -91,9 +91,9 @@ When reviewing architectures, these are CRITICAL concerns (must be flagged):
 - Single points of failure
 - Secrets management issues
 
-**Output Format**:
+**Output Format** (MANDATORY — all headings and table formats are required exactly as shown):
 ```markdown
-## Architecture Review: [System Name]
+## Architecture Review: <System Name>
 
 ### Summary
 [1-2 sentence assessment]
@@ -107,23 +107,37 @@ When reviewing architectures, these are CRITICAL concerns (must be flagged):
 ### Concerns
 | Priority | Concern | Impact | Recommendation |
 |----------|---------|--------|----------------|
-| CRITICAL/HIGH/MED/LOW | ... | ... | ... |
+| CRITICAL/HIGH/MEDIUM/LOW | [Description] | [Impact description] | [Actionable fix] |
 
 ### Security Assessment
-- Authentication: [Assessment]
-- Authorization: [Assessment]
-- Encryption: [Assessment]
-- Secrets Management: [Assessment]
+- **Authentication**: [Assessment]
+- **Authorization**: [Assessment]
+- **Encryption**: [Assessment]
+- **Secrets Management**: [Assessment]
 
 ### Risks
-- [Risk]: [Likelihood] / [Impact]
+| Risk | Likelihood | Impact | Mitigation |
+|------|------------|--------|------------|
+| [Risk description] | High/Medium/Low | Critical/High/Medium/Low | [Mitigation strategy] |
 
 ### Recommendations
-1. [Actionable item]
+1. **[CRITICAL]** [Actionable item for critical issues]
+2. **[HIGH]** [Actionable item for high-priority issues]
+3. **[MEDIUM]** [Actionable item for medium-priority issues]
 
 ### Questions for Stakeholders
 - [Question needing clarification]
 ```
+
+**Format Enforcement Rules**:
+- All section headings MUST use `##` or `###` tokens exactly as shown
+- Concerns table MUST have exactly these columns: `| Priority | Concern | Impact | Recommendation |`
+- Risks table MUST have exactly these columns: `| Risk | Likelihood | Impact | Mitigation |`
+- Recommendations MUST use numbered list with priority labels: `**[CRITICAL]**`, `**[HIGH]**`, `**[MEDIUM]**`
+- The following MUST be flagged as **CRITICAL** when present:
+  - JWT stored in localStorage
+  - Single EC2 instance (single point of failure)
+  - Shared PostgreSQL database without isolation
 
 ---
 

@@ -6,6 +6,48 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.2] - 2025-12-19
+
+### Why v0.1.2 Exists
+
+"Formatting Determinism + Distribution Maturity" — ensures Architecture Review output passes strict formatting validation, and eliminates drift between canonical and plugin-bundled skill copies.
+
+### Added
+
+- **Sync/Check Tool** (`scripts/ops/sync_plugin_skills.py`)
+  - `--check` mode for CI: detect drift, exit non-zero if found
+  - `--sync` mode for developers: copy canonical → plugin bundle
+  - Derives version dynamically from canonical SKILL.md
+
+- **CI Drift Gate**
+  - `validate_artifacts.py` now includes hard drift check
+  - CI fails with clear error if canonical and plugin copies diverge
+  - Remediation instructions included in output
+
+- **Format Enforcement** (Architecture Review mode)
+  - All 9 required headings validated via regex
+  - Concerns table header: `| Priority | Concern | Impact | Recommendation |`
+  - Risks table header: `| Risk | Likelihood | Impact | Mitigation |`
+  - CRITICAL flags enforced for known security issues
+
+### Changed
+
+- **SKILL.md Output Format**
+  - Risks section changed from bullet list to markdown pipe table
+  - All headings now explicitly require `##`/`###` tokens
+  - Added Format Enforcement Rules section
+
+- **Legacy Skill-Packs**
+  - `products/skill-packs/` now has explicit deprecation marker
+  - Removal planned for v0.2.0
+
+### Fixed
+
+- Plugin copy synced to canonical v0.1.2 (was at v0.1.1)
+- Eliminated silent drift between distribution surfaces
+
+---
+
 ## [0.1.1] - 2025-12-19
 
 ### Why v0.1.1 Exists

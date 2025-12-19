@@ -13,11 +13,13 @@ Exit codes:
     1 - One or more validations failed
 """
 
+import filecmp
 import json
 import os
 import re
 import sys
 from pathlib import Path
+from typing import List, Tuple
 
 
 def log_ok(msg: str) -> None:
@@ -187,6 +189,151 @@ def validate_marketplace_json(marketplace_path: Path) -> bool:
         return False
 
 
+def validate_architecture_review_format(golden_path: Path) -> bool:
+    """Validate Architecture Review output format in golden files.
+
+    Enforces v0.1.2 "Formatting Determinism" requirements:
+    - Required markdown headings with ## / ### tokens
+    - Concerns table with exact column structure
+    - Risks table with exact column structure
+    - CRITICAL flags for known security issues
+    """
+    if not golden_path.exists():
+        log_fail(f"Golden file not found: {golden_path}")
+        return False
+
+    try:
+        with open(golden_path, 'r', encoding='utf-8') as f:
+            content = f.read()
+
+        all_passed = True
+
+        # Required headings (must have ## or ### prefix)
+        required_headings = [
+            (r'^## Architecture Review:', 'Main heading "## Architecture Review:"'),
+            (r'^### Summary', 'Section "### Summary"'),
+            (r'^### Components Reviewed', 'Section "### Components Reviewed"'),
+            (r'^### Strengths', 'Section "### Strengths"'),
+            (r'^### Concerns', 'Section "### Concerns"'),
+            (r'^### Security Assessment', 'Section "### Security Assessment"'),
+            (r'^### Risks', 'Section "### Risks"'),
+            (r'^### Recommendations', 'Section "### Recommendations"'),
+            (r'^### Questions for Stakeholders', 'Section "### Questions for Stakeholders"'),
+        ]
+
+        for pattern, description in required_headings:
+            if not re.search(pattern, content, re.MULTILINE):
+                log_fail(f"Missing required heading: {description}")
+                all_passed = False
+
+        # Concerns table header validation (exact column structure)
+        concerns_table_pattern = r'\|\s*Priority\s*\|\s*Concern\s*\|\s*Impact\s*\|\s*Recommendation\s*\|'
+        if not re.search(concerns_table_pattern, content, re.IGNORECASE):
+            log_fail("Missing Concerns table header: | Priority | Concern | Impact | Recommendation |")
+            all_passed = False
+        else:
+            log_ok("Concerns table header present")
+
+        # Risks table header validation (exact column structure)
+        risks_table_pattern = r'\|\s*Risk\s*\|\s*Likelihood\s*\|\s*Impact\s*\|\s*Mitigation\s*\|'
+        if not re.search(risks_table_pattern, content, re.IGNORECASE):
+            log_fail("Missing Risks table header: | Risk | Likelihood | Impact | Mitigation |")
+            all_passed = False
+        else:
+            log_ok("Risks table header present")
+
+        # CRITICAL flag validation for known security issues
+        critical_issues = [
+            (r'CRITICAL.*JWT.*localStorage|JWT.*localStorage.*CRITICAL|localStorage.*JWT.*CRITICAL',
+             'JWT stored in localStorage must be flagged as CRITICAL'),
+            (r'CRITICAL.*Single.*EC2|Single.*EC2.*CRITICAL|EC2.*instance.*CRITICAL',
+             'Single EC2 instance must be flagged as CRITICAL'),
+            (r'CRITICAL.*[Ss]hared.*[Dd]atabase|[Ss]hared.*[Dd]atabase.*CRITICAL|[Ss]hared.*PostgreSQL.*CRITICAL',
+             'Shared PostgreSQL database must be flagged as CRITICAL'),
+        ]
+
+        for pattern, description in critical_issues:
+            if not re.search(pattern, content, re.IGNORECASE):
+                log_fail(f"Missing CRITICAL flag: {description}")
+                all_passed = False
+
+        if all_passed:
+            log_ok(f"Architecture Review format validation passed: {golden_path}")
+
+        return all_passed
+
+    except Exception as e:
+        log_fail(f"Error validating Architecture Review format: {golden_path} - {e}")
+        return False
+
+
+def validate_skill_drift(canonical: Path, plugin: Path) -> bool:
+    """
+    Validate no drift between canonical skill and plugin-bundled copy.
+
+    This is a hard gate — CI fails if drift is detected.
+    Developers should run: python scripts/ops/sync_plugin_skills.py --sync
+    """
+    if not canonical.exists():
+        log_fail(f"Canonical skill not found: {canonical}")
+        return False
+
+    if not plugin.exists():
+        log_fail(f"Plugin skill not found: {plugin}")
+        return False
+
+    missing_in_plugin: List[str] = []
+    differing_files: List[str] = []
+
+    # Get all files in canonical (relative paths)
+    canonical_files = set()
+    for root_dir, _, files in os.walk(canonical):
+        for f in files:
+            rel_path = os.path.relpath(os.path.join(root_dir, f), canonical)
+            canonical_files.add(rel_path)
+
+    # Get all files in plugin copy (relative paths)
+    plugin_files = set()
+    for root_dir, _, files in os.walk(plugin):
+        for f in files:
+            rel_path = os.path.relpath(os.path.join(root_dir, f), plugin)
+            plugin_files.add(rel_path)
+
+    # Find missing files (in canonical but not in plugin)
+    missing_in_plugin = sorted(canonical_files - plugin_files)
+
+    # Find differing files (in both but content differs)
+    common_files = canonical_files & plugin_files
+    for rel_path in sorted(common_files):
+        canonical_file = canonical / rel_path
+        plugin_file = plugin / rel_path
+        if not filecmp.cmp(canonical_file, plugin_file, shallow=False):
+            differing_files.append(rel_path)
+
+    has_drift = bool(missing_in_plugin or differing_files)
+
+    if has_drift:
+        log_fail("DRIFT DETECTED between canonical and plugin-bundled skill")
+        print("\n    --- Drift Report ---")
+
+        if missing_in_plugin:
+            print(f"\n    Missing in plugin ({len(missing_in_plugin)} files):")
+            for f in missing_in_plugin:
+                print(f"      - {f}")
+
+        if differing_files:
+            print(f"\n    Content differs ({len(differing_files)} files):")
+            for f in differing_files:
+                print(f"      - {f}")
+
+        print("\n    --- Remediation ---")
+        print("    Run: python scripts/ops/sync_plugin_skills.py --sync")
+        return False
+    else:
+        log_ok("No drift between canonical and plugin skill copies")
+        return True
+
+
 def scan_for_secrets(root: Path) -> bool:
     """Scan for potential hardcoded secrets in tracked files."""
     secret_patterns = [
@@ -309,7 +456,23 @@ def main() -> int:
         else:
             log_ok(f"Found {len(golden_files)} golden file(s)")
 
-    # 5. Security scan
+    # 5. Validate Architecture Review format in golden files
+    print("\n--- Architecture Review Format Validation (v0.1.2) ---")
+    golden_001 = goldens / 'golden_001_expected.md'
+    if golden_001.exists():
+        if not validate_architecture_review_format(golden_001):
+            all_passed = False
+    else:
+        log_warn("golden_001_expected.md not found, skipping format validation")
+
+    # 6. Drift check: canonical vs plugin skill (hard gate)
+    print("\n--- Skill Drift Check (v0.1.2) ---")
+    canonical_skill_dir = repo_root / 'skills' / 'senior-developer-brain'
+    plugin_skill_dir = repo_root / 'products' / 'claude-code-plugins' / 'ninobyte-senior-dev-brain' / 'skills' / 'senior-developer-brain'
+    if not validate_skill_drift(canonical_skill_dir, plugin_skill_dir):
+        all_passed = False
+
+    # 7. Security scan
     print("\n--- Security Scan ---")
     scan_for_secrets(repo_root)
 

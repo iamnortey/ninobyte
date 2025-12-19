@@ -1,10 +1,11 @@
 # Senior Developer's Brain — Legacy Location
 
-> **⚠️ DEPRECATED (v0.1.1)**: This folder is a legacy alias.
+> **⚠️ DEPRECATED (v0.1.1) — REMOVAL PLANNED: v0.2.0**
 >
 > **Canonical source moved to: `/skills/senior-developer-brain/`**
 >
-> This location is maintained for backward compatibility only.
+> This location is frozen at v0.1.0 and NOT being updated.
+> See `DEPRECATED.md` for migration details.
 
 ---
 
