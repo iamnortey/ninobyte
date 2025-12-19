@@ -189,6 +189,93 @@ def validate_marketplace_json(marketplace_path: Path) -> bool:
         return False
 
 
+def validate_claude_code_marketplace_schema(marketplace_path: Path) -> bool:
+    """
+    Validate Claude Code schema requirements for marketplace.json.
+
+    Claude Code enforces:
+    - plugins[].source MUST start with "./"
+    - source path must resolve to an existing directory
+    - symlink .claude-plugin/products must exist and point to ../products
+
+    See: docs/claude_code_plugin_runbook.md
+    """
+    if not marketplace_path.exists():
+        log_fail(f"marketplace.json not found: {marketplace_path}")
+        return False
+
+    marketplace_dir = marketplace_path.parent
+    all_passed = True
+
+    try:
+        with open(marketplace_path, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+
+        plugins = data.get('plugins', [])
+
+        for i, plugin in enumerate(plugins):
+            source = plugin.get('source', '')
+            plugin_name = plugin.get('name', f'plugin[{i}]')
+
+            # Check 1: source must start with "./"
+            if not source.startswith('./'):
+                log_fail(
+                    f"Claude Code schema violation: {plugin_name} source "
+                    f"'{source}' must start with './' "
+                    f"(Claude Code rejects '../' or bare paths)"
+                )
+                all_passed = False
+                continue
+
+            # Check 2: source path must resolve to existing directory
+            resolved_path = (marketplace_dir / source).resolve()
+            if not resolved_path.is_dir():
+                log_fail(
+                    f"Plugin source path does not exist: {plugin_name} -> {resolved_path}"
+                )
+                all_passed = False
+            else:
+                log_ok(f"Plugin source path exists: {plugin_name} -> {resolved_path}")
+
+        # Check 3: symlink .claude-plugin/products must exist
+        products_symlink = marketplace_dir / 'products'
+        if not products_symlink.exists():
+            log_fail(
+                f"Required symlink missing: {products_symlink}\n"
+                f"    Run: ln -sf ../products {products_symlink}"
+            )
+            all_passed = False
+        elif not products_symlink.is_symlink():
+            log_fail(
+                f"{products_symlink} exists but is not a symlink. "
+                f"Claude Code path resolution requires symlink."
+            )
+            all_passed = False
+        else:
+            # Verify symlink target
+            symlink_target = os.readlink(products_symlink)
+            if symlink_target != '../products':
+                log_fail(
+                    f"Symlink {products_symlink} points to '{symlink_target}', "
+                    f"expected '../products'"
+                )
+                all_passed = False
+            else:
+                log_ok(f"Symlink valid: {products_symlink} -> {symlink_target}")
+
+        if all_passed:
+            log_ok("Claude Code marketplace schema validation passed")
+
+        return all_passed
+
+    except json.JSONDecodeError as e:
+        log_fail(f"marketplace.json is not valid JSON: {marketplace_path} - {e}")
+        return False
+    except Exception as e:
+        log_fail(f"Error validating Claude Code schema: {e}")
+        return False
+
+
 def validate_architecture_review_format(golden_path: Path) -> bool:
     """Validate Architecture Review output format in golden files.
 
@@ -404,6 +491,11 @@ def main() -> int:
     print("\n--- Marketplace Validation ---")
     marketplace_path = repo_root / '.claude-plugin' / 'marketplace.json'
     if not validate_marketplace_json(marketplace_path):
+        all_passed = False
+
+    # 1b. Claude Code schema validation (v0.1.3+)
+    print("\n--- Claude Code Marketplace Schema (v0.1.3) ---")
+    if not validate_claude_code_marketplace_schema(marketplace_path):
         all_passed = False
 
     # 2. Validate plugin structure
