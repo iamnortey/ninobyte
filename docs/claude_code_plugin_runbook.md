@@ -128,13 +128,15 @@ if p.exists():
 Before working with the plugin, run:
 
 ```bash
-./scripts/ops/ensure_claude_marketplace_paths.sh
+python3 scripts/ops/ensure_claude_marketplace_paths.py
 ```
 
 This script:
-1. Creates the symlink if missing
-2. Validates JSON syntax
-3. Runs full artifact validation
+1. Validates marketplace.json and plugin.json syntax
+2. Enforces plugins[].source starts with "./" (Claude schema)
+3. Creates the symlink if missing (cross-platform)
+4. Validates plugin source paths resolve to existing directories
+5. Prints "Proof of State" summary
 
 ---
 
