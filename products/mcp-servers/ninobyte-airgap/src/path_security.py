@@ -77,14 +77,16 @@ class PathSecurityContext:
     def _matches_blocked_pattern(self, path: str) -> Optional[str]:
         """Check if path matches any blocked pattern. Returns matching pattern or None."""
         basename = os.path.basename(path)
-        full_path = path
+        # Normalize path separators for cross-platform pattern matching
+        # Windows paths use backslashes, but blocked patterns use forward slashes
+        normalized_path = path.replace("\\", "/")
 
         for pattern in self.config.blocked_patterns:
             # Check basename match
             if fnmatch.fnmatch(basename, pattern):
                 return pattern
             # Check if pattern appears in path (for patterns like .git/config)
-            if '/' in pattern and pattern in full_path:
+            if '/' in pattern and pattern in normalized_path:
                 return pattern
 
         return None

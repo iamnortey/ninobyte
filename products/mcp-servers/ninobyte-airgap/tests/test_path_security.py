@@ -66,6 +66,26 @@ class TestPathValidation:
         assert result.allowed is False
         assert result.denial_reason == PathDenialReason.BLOCKED_PATTERN
 
+    def test_blocked_pattern_windows_git_config(self, config_with_temp_dir):
+        """Test that Windows-style .git/config paths are blocked."""
+        ctx = PathSecurityContext(config_with_temp_dir)
+        # Directly test the pattern matching with Windows-style backslashes
+        windows_path = r"C:\repo\.git\config"
+        matched = ctx._matches_blocked_pattern(windows_path)
+
+        assert matched is not None
+        assert matched == ".git/config"
+
+    def test_blocked_pattern_windows_aws_credentials(self, config_with_temp_dir):
+        """Test that Windows-style .aws/credentials paths are blocked."""
+        ctx = PathSecurityContext(config_with_temp_dir)
+        # Directly test the pattern matching with Windows-style backslashes
+        windows_path = r"C:\repo\.aws\credentials"
+        matched = ctx._matches_blocked_pattern(windows_path)
+
+        assert matched is not None
+        assert matched == ".aws/credentials"
+
     def test_no_allowed_roots_denies_all(self):
         """Test that empty allowed_roots denies everything."""
         config = AirGapConfig(allowed_roots=[])
