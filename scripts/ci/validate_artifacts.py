@@ -652,6 +652,111 @@ def validate_airgap_structure(airgap_root: Path) -> bool:
     return all_passed
 
 
+# =============================================================================
+# Markdown Secret-Scan Hygiene (v0.2.2+)
+# =============================================================================
+
+# Disallowed patterns in markdown files (docs and tests)
+# These patterns trigger secret scanners and should use composed strings instead
+MARKDOWN_DISALLOWED_PATTERNS: List[Tuple[str, str, str]] = [
+    # (regex pattern, pattern name, remediation hint)
+    (
+        r'-----BEGIN\s+(RSA\s+)?PRIV' + r'ATE\s+KEY-----',
+        'Private key marker',
+        'Use composed strings: "-----BEGIN " + "PRIV" + "ATE KEY-----"'
+    ),
+    (
+        r'-----END\s+(RSA\s+)?PRIV' + r'ATE\s+KEY-----',
+        'Private key end marker',
+        'Use composed strings: "-----END " + "PRIV" + "ATE KEY-----"'
+    ),
+    (
+        r'AWS_SEC' + r'RET_ACCESS_KEY',
+        'AWS secret key variable',
+        'Use composed strings or describe generically'
+    ),
+    (
+        r'pass' + r'word\s*=',
+        'Literal credential assignment',
+        'Use composed strings: "pass" + "word="'
+    ),
+    (
+        r'PASS' + r'WORD\s*=',
+        'Literal credential assignment (uppercase)',
+        'Use composed strings: "PASS" + "WORD="'
+    ),
+]
+
+
+def validate_markdown_secret_hygiene(products_root: Path) -> bool:
+    """
+    Validate that markdown files in docs and tests directories do not contain
+    static secret-scan signatures.
+
+    This is a HARD GATE - CI fails if disallowed patterns are found.
+
+    Scans:
+    - products/**/docs/**/*.md
+    - products/**/tests/**/*.md
+    """
+    if not products_root.exists():
+        log_info(f"Products directory not found (skipping): {products_root}")
+        return True
+
+    all_passed = True
+    violations: List[str] = []
+
+    # Collect markdown files from docs/ and tests/ subdirectories
+    markdown_files: List[Path] = []
+
+    for product_dir in products_root.iterdir():
+        if not product_dir.is_dir():
+            continue
+
+        # Recursively find docs and tests directories
+        for subdir in product_dir.rglob('*'):
+            if subdir.is_dir() and subdir.name in ('docs', 'tests'):
+                for md_file in subdir.rglob('*.md'):
+                    markdown_files.append(md_file)
+
+    if not markdown_files:
+        log_info("No markdown files found in products/**/docs/ or products/**/tests/")
+        return True
+
+    # Scan each markdown file
+    for md_file in markdown_files:
+        try:
+            with open(md_file, 'r', encoding='utf-8') as f:
+                content = f.read()
+
+            rel_path = md_file.relative_to(products_root.parent)
+
+            for pattern, pattern_name, hint in MARKDOWN_DISALLOWED_PATTERNS:
+                if re.search(pattern, content, re.IGNORECASE):
+                    violations.append(
+                        f"{rel_path}: {pattern_name}\n"
+                        f"      Hint: {hint}"
+                    )
+                    all_passed = False
+
+        except Exception as e:
+            log_warn(f"Could not read {md_file}: {e}")
+
+    if violations:
+        log_fail("Markdown secret-scan hygiene violations found:")
+        for v in violations[:20]:
+            print(f"    {v}")
+        if len(violations) > 20:
+            print(f"    ... and {len(violations) - 20} more")
+        print()
+        print("    Policy: Markdown files in docs/ and tests/ must not contain")
+        print("    static secret-scan signatures. Use composed strings instead.")
+        return False
+
+    log_ok(f"Markdown secret-scan hygiene passed ({len(markdown_files)} files scanned)")
+    return True
+
+
 def scan_for_secrets(root: Path) -> bool:
     """Scan for potential hardcoded secrets in tracked files."""
     secret_patterns = [
@@ -798,6 +903,12 @@ def main() -> int:
     # 7. Security scan
     print("\n--- Security Scan ---")
     scan_for_secrets(repo_root)
+
+    # 7b. Markdown secret-scan hygiene (v0.2.2+)
+    print("\n--- Markdown Secret-Scan Hygiene (v0.2.2) ---")
+    products_root = repo_root / 'products'
+    if not validate_markdown_secret_hygiene(products_root):
+        all_passed = False
 
     # 8. AirGap MCP Server validation (v0.2.0+)
     # Canonical path: products/mcp-servers/ninobyte-airgap/

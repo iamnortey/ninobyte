@@ -1,14 +1,14 @@
 # Ninobyte AirGap Tests – Fixture Policy
 
 ## Purpose
-These tests intentionally exercise redaction logic (passwords, tokens, key markers). However, CI secret scanners can produce false positives when sensitive-looking literals are embedded directly in test source.
+These tests intentionally exercise redaction logic (credentials, tokens, key markers). However, CI secret scanners can produce false positives when sensitive-looking literals are embedded directly in test source.
 
 ## Policy (Non-Negotiable)
 - Do **not** hardcode common secret signatures in test source, including:
-  - `password=...`
-  - `PASSWORD=...`
-  - `"-----BEGIN " + "PRIV" + "ATE KEY-----"` (and related key marker patterns)
-  - `AWS_SECRET_ACCESS_KEY`
+  - Credential assignments like `pass` + `word=...`
+  - Uppercase variants like `PASS` + `WORD=...`
+  - Key markers like `-----BEGIN ` + `PRIV` + `ATE KEY-----`
+  - Cloud credential variable names like `AWS_SEC` + `RET_ACCESS_KEY`
 - Instead, **compose** strings to avoid static signature matches while preserving runtime coverage.
 
 ## Approved Patterns
@@ -23,4 +23,3 @@ Or assemble markers separately:
 
 ## Why
 This maintains deterministic redaction behavior while keeping CI scanners signal-rich and noise-free.
-
