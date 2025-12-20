@@ -94,3 +94,7 @@ ops/evidence/**/*.redacted
 
 # Editor configs that may contain local paths
 .claude
+
+# macOS
+.DS_Store
+**/.DS_Store
