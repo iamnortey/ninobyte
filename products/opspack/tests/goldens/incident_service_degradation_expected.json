@@ -1,0 +1,70 @@
+{
+  "classification": {
+    "category": "performance",
+    "severity": "high"
+  },
+  "evidence": {
+    "extracted_data": {
+      "affected_services": [
+        "checkout-service"
+      ],
+      "id": "INC-2024-002",
+      "source": "apm_monitoring",
+      "timestamp": "2024-12-21T16:45:00Z",
+      "title": "API response times degraded",
+      "users_affected": 250
+    },
+    "source_fields_missing": [
+      "severity",
+      "category"
+    ],
+    "source_fields_present": [
+      "id",
+      "title",
+      "description",
+      "type",
+      "timestamp",
+      "source",
+      "affected_services",
+      "users_affected",
+      "reporter",
+      "tags"
+    ]
+  },
+  "incident": {
+    "id": "INC-2024-002",
+    "source": "apm_monitoring",
+    "timestamp": "2024-12-21T16:45:00Z",
+    "title": "API response times degraded"
+  },
+  "opspack_version": "0.1.0",
+  "recommended_actions": [
+    {
+      "action": "Check resource utilization",
+      "priority": 1,
+      "rationale": "Identify bottleneck"
+    },
+    {
+      "action": "Review recent traffic patterns",
+      "priority": 2,
+      "rationale": "Detect anomalies"
+    },
+    {
+      "action": "Scale resources if needed",
+      "priority": 3,
+      "rationale": "Address capacity issues"
+    },
+    {
+      "action": "Establish communication channel",
+      "priority": 4,
+      "rationale": "Coordinate response team"
+    },
+    {
+      "action": "Document timeline and actions taken",
+      "priority": 5,
+      "rationale": "Support post-incident review"
+    }
+  ],
+  "risk_flags": [],
+  "version": "1.0.0"
+}

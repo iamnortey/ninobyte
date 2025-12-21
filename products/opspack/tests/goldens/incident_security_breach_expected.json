@@ -1,0 +1,94 @@
+{
+  "classification": {
+    "category": "security",
+    "severity": "critical"
+  },
+  "evidence": {
+    "extracted_data": {
+      "affected_services": [
+        "auth-service",
+        "user-db",
+        "api-gateway"
+      ],
+      "category": "security",
+      "id": "INC-2024-001",
+      "severity": "critical",
+      "source": "security_monitoring",
+      "timestamp": "2024-12-21T14:30:00Z",
+      "title": "Unauthorized access detected in production database",
+      "users_affected": 15000
+    },
+    "source_fields_missing": [],
+    "source_fields_present": [
+      "id",
+      "title",
+      "description",
+      "severity",
+      "category",
+      "type",
+      "timestamp",
+      "source",
+      "affected_services",
+      "users_affected",
+      "reporter",
+      "tags"
+    ]
+  },
+  "incident": {
+    "id": "INC-2024-001",
+    "source": "security_monitoring",
+    "timestamp": "2024-12-21T14:30:00Z",
+    "title": "Unauthorized access detected in production database"
+  },
+  "opspack_version": "0.1.0",
+  "recommended_actions": [
+    {
+      "action": "Isolate affected systems",
+      "priority": 1,
+      "rationale": "Prevent further unauthorized access"
+    },
+    {
+      "action": "Preserve logs and evidence",
+      "priority": 2,
+      "rationale": "Enable forensic investigation"
+    },
+    {
+      "action": "Notify security team",
+      "priority": 3,
+      "rationale": "Activate incident response protocol"
+    },
+    {
+      "action": "Establish communication channel",
+      "priority": 4,
+      "rationale": "Coordinate response team"
+    },
+    {
+      "action": "Document timeline and actions taken",
+      "priority": 5,
+      "rationale": "Support post-incident review"
+    }
+  ],
+  "risk_flags": [
+    {
+      "action": "Engage security team immediately",
+      "flag": "SECURITY_INCIDENT",
+      "reason": "Incident classified as security-related"
+    },
+    {
+      "action": "Escalate to on-call leadership",
+      "flag": "CRITICAL_SEVERITY",
+      "reason": "Incident severity is critical"
+    },
+    {
+      "action": "Prepare customer communication",
+      "flag": "HIGH_USER_IMPACT",
+      "reason": "Affects 15000 users"
+    },
+    {
+      "action": "Coordinate cross-team response",
+      "flag": "MULTI_SERVICE_IMPACT",
+      "reason": "Affects 3 services: auth-service, user-db, api-gateway"
+    }
+  ],
+  "version": "1.0.0"
+}

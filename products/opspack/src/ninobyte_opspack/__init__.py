@@ -1,7 +1,7 @@
 """
 Ninobyte OpsPack - Read-Only Operational Intelligence Module
 
-This is a skeleton package. No implementation exists in this phase.
+Provides deterministic, rule-based operational intelligence functions.
 See docs/ROADMAP.md for the implementation plan.
 
 Security constraints (enforced by design):
@@ -12,5 +12,6 @@ Security constraints (enforced by design):
 """
 
 from .version import __version__
+from .triage import triage_incident, TRIAGE_SCHEMA_VERSION
 
-__all__ = ["__version__"]
+__all__ = ["__version__", "triage_incident", "TRIAGE_SCHEMA_VERSION"]

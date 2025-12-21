@@ -1,12 +1,12 @@
 # Ninobyte OpsPack - Interface Contract
 
-**Version**: 0.0.0 (Contract Only)
-**Status**: Design specification; implementation deferred
+**Version**: 0.1.0
+**Status**: MVP implemented (`incident-triage` command)
 **Last Updated**: December 2024
 
 ## Overview
 
-This document defines the contracts for OpsPack modules. These are design specifications only; no implementation exists in this phase.
+This document defines the contracts for OpsPack modules and CLI commands.
 
 ## Contract Principles
 
@@ -16,6 +16,91 @@ All OpsPack interfaces adhere to:
 2. **Explicit consent**: Each data source requires explicit configuration
 3. **Redaction-first**: All outputs pass through redaction before return
 4. **Auditability**: All operations are logged with structured metadata
+5. **Determinism**: Same input always produces same output
+
+---
+
+## CLI Commands
+
+### incident-triage
+
+**Purpose**: Analyze an incident snapshot and produce a deterministic triage summary with classification, recommended actions, and risk flags.
+
+**CLI Interface**:
+```
+ninobyte-opspack incident-triage --input <path-to-json> [--format json]
+python -m ninobyte_opspack incident-triage --input <path-to-json> [--format json]
+```
+
+**Input Contract** (JSON file):
+```json
+{
+  "id": "string (required)",
+  "title": "string (required)",
+  "description": "string (optional)",
+  "severity": "string (optional): critical|high|medium|low",
+  "category": "string (optional): security|availability|performance|data_integrity|configuration",
+  "type": "string (optional)",
+  "timestamp": "string (optional, ISO 8601)",
+  "source": "string (optional)",
+  "affected_services": ["array of strings (optional)"],
+  "users_affected": "integer (optional)",
+  "reporter": "string (optional)",
+  "tags": ["array of strings (optional)"]
+}
+```
+
+**Output Contract** (JSON to stdout):
+```json
+{
+  "version": "1.0.0",
+  "opspack_version": "string",
+  "incident": {
+    "id": "string",
+    "title": "string",
+    "timestamp": "string or null",
+    "source": "string or null"
+  },
+  "classification": {
+    "severity": "critical|high|medium|low",
+    "category": "security|availability|performance|data_integrity|configuration|unknown"
+  },
+  "recommended_actions": [
+    {
+      "priority": "integer (1-N)",
+      "action": "string",
+      "rationale": "string"
+    }
+  ],
+  "risk_flags": [
+    {
+      "flag": "string (e.g., SECURITY_INCIDENT, CRITICAL_SEVERITY)",
+      "reason": "string",
+      "action": "string"
+    }
+  ],
+  "evidence": {
+    "source_fields_present": ["array of field names"],
+    "source_fields_missing": ["array of field names"],
+    "extracted_data": {}
+  }
+}
+```
+
+**Guarantees**:
+- Pure function: no side effects beyond stdout
+- Deterministic: same input always produces same output
+- No network calls
+- No shell execution
+- No filesystem writes
+
+**Exit Codes**:
+- 0: Success
+- 1: Error (file not found, invalid JSON, permission error)
+
+**Implementation Status**: Implemented (v0.1.0)
+
+---
 
 ## Module Contracts
 

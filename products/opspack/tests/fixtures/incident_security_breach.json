@@ -1,0 +1,14 @@
+{
+  "id": "INC-2024-001",
+  "title": "Unauthorized access detected in production database",
+  "description": "Security monitoring detected unauthorized access attempts to the production PostgreSQL database. Multiple failed login attempts followed by one successful connection from an unknown IP address.",
+  "severity": "critical",
+  "category": "security",
+  "type": "security_incident",
+  "timestamp": "2024-12-21T14:30:00Z",
+  "source": "security_monitoring",
+  "affected_services": ["auth-service", "user-db", "api-gateway"],
+  "users_affected": 15000,
+  "reporter": "automated_alert",
+  "tags": ["security", "database", "unauthorized_access", "production"]
+}
