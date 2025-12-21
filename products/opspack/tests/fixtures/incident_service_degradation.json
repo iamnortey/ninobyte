@@ -1,0 +1,12 @@
+{
+  "id": "INC-2024-002",
+  "title": "API response times degraded",
+  "description": "API latency increased to 2-3 seconds average. Users reporting slow page loads and timeout errors in the checkout flow.",
+  "type": "performance_issue",
+  "timestamp": "2024-12-21T16:45:00Z",
+  "source": "apm_monitoring",
+  "affected_services": ["checkout-service"],
+  "users_affected": 250,
+  "reporter": "ops_team",
+  "tags": ["performance", "latency", "api"]
+}
