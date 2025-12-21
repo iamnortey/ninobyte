@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+#
+# OpsPack CLI Wrapper
+#
+# Usage: scripts/bin/opspack <command> [options]
+#
+# Example:
+#   scripts/bin/opspack incident-triage --input incident.json
+#
+# This wrapper sets up the Python path and invokes the OpsPack module.
+# It is read-only: no file writes, no network, no shell execution.
+#
+
+set -euo pipefail
+
+# Resolve script directory and repo root
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+
+# Set PYTHONPATH to include OpsPack source
+export PYTHONPATH="${REPO_ROOT}/products/opspack/src${PYTHONPATH:+:$PYTHONPATH}"
+
+# Invoke the module
+exec python3 -m ninobyte_opspack "$@"

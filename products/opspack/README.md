@@ -14,10 +14,10 @@ Ninobyte OpsPack is a read-only operational intelligence module designed to coll
 OpsPack is a standard Python package. From the repository root:
 
 ```bash
-# Run directly with Python
-python -m ninobyte_opspack --help
+# Recommended: use the wrapper script
+scripts/bin/opspack --help
 
-# Or from the products/opspack directory
+# Alternative: run directly with Python (requires PYTHONPATH)
 cd products/opspack
 PYTHONPATH=src python -m ninobyte_opspack --help
 ```
@@ -27,11 +27,11 @@ PYTHONPATH=src python -m ninobyte_opspack --help
 The `incident-triage` command analyzes an incident snapshot and produces a deterministic triage summary.
 
 ```bash
-# Basic usage
-python -m ninobyte_opspack incident-triage --input incident.json
+# Using the wrapper script (recommended)
+scripts/bin/opspack incident-triage --input incident.json
 
 # With explicit JSON format
-python -m ninobyte_opspack incident-triage --input incident.json --format json
+scripts/bin/opspack incident-triage --input incident.json --format json
 ```
 
 #### Input Format
