@@ -27,6 +27,7 @@ This MCP server operates under an **AirGap security model**:
 - Symlink targets are validated to remain within allowed roots
 - Traversal sequences (`../`) are detected and rejected
 - Blocked patterns are enforced before any I/O
+- Windows separator bypass covered by regression tests: `test_blocked_pattern_windows_git_config`, `test_blocked_pattern_windows_aws_credentials` in `tests/test_path_security.py`
 
 ### Blocked Patterns (Default)
 
