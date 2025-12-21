@@ -37,7 +37,7 @@
     "timestamp": "2024-12-21T16:45:00Z",
     "title": "API response times degraded"
   },
-  "opspack_version": "0.1.0",
+  "protocol_version": "0.1",
   "recommended_actions": [
     {
       "action": "Check resource utilization",
@@ -65,6 +65,5 @@
       "rationale": "Support post-incident review"
     }
   ],
-  "risk_flags": [],
-  "version": "1.0.0"
+  "risk_flags": []
 }

@@ -53,8 +53,7 @@ python -m ninobyte_opspack incident-triage --input <path-to-json> [--format json
 **Output Contract** (JSON to stdout):
 ```json
 {
-  "version": "1.0.0",
-  "opspack_version": "string",
+  "protocol_version": "0.1",
   "incident": {
     "id": "string",
     "title": "string",

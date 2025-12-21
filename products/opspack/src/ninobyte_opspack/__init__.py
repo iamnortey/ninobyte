@@ -12,6 +12,6 @@ Security constraints (enforced by design):
 """
 
 from .version import __version__
-from .triage import triage_incident, TRIAGE_SCHEMA_VERSION
+from .triage import triage_incident, TRIAGE_PROTOCOL_VERSION
 
-__all__ = ["__version__", "triage_incident", "TRIAGE_SCHEMA_VERSION"]
+__all__ = ["__version__", "triage_incident", "TRIAGE_PROTOCOL_VERSION"]

@@ -14,8 +14,9 @@ Security constraints (enforced by design):
 from typing import Any, Dict, List, Optional
 from .version import __version__
 
-# Output schema version for consumers to track compatibility
-TRIAGE_SCHEMA_VERSION = "1.0.0"
+# Protocol version for consumers to track compatibility (major.minor only)
+# This is separate from package version to ensure output stability
+TRIAGE_PROTOCOL_VERSION = "0.1"
 
 
 # Severity levels (ordered from highest to lowest)
@@ -295,10 +296,9 @@ def triage_incident(incident: Dict[str, Any]) -> Dict[str, Any]:
             - tags: List of tags/labels
 
     Returns:
-        Triage result dictionary conforming to schema version 1.0.0:
+        Triage result dictionary conforming to protocol version 0.1:
         {
-            "version": "<schema version>",
-            "opspack_version": "<module version>",
+            "protocol_version": "0.1",
             "incident": {...subset of input...},
             "classification": {"severity": "...", "category": "..."},
             "recommended_actions": [...],
@@ -335,8 +335,7 @@ def triage_incident(incident: Dict[str, Any]) -> Dict[str, Any]:
     }
 
     return {
-        "version": TRIAGE_SCHEMA_VERSION,
-        "opspack_version": __version__,
+        "protocol_version": TRIAGE_PROTOCOL_VERSION,
         "incident": incident_subset,
         "classification": classification,
         "recommended_actions": recommended_actions,

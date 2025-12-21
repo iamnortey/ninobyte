@@ -40,7 +40,7 @@
     "timestamp": "2024-12-21T14:30:00Z",
     "title": "Unauthorized access detected in production database"
   },
-  "opspack_version": "0.1.0",
+  "protocol_version": "0.1",
   "recommended_actions": [
     {
       "action": "Isolate affected systems",
@@ -89,6 +89,5 @@
       "flag": "MULTI_SERVICE_IMPACT",
       "reason": "Affects 3 services: auth-service, user-db, api-gateway"
     }
-  ],
-  "version": "1.0.0"
+  ]
 }

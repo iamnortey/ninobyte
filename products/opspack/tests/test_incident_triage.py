@@ -11,8 +11,7 @@ from pathlib import Path
 import pytest
 
 # Path setup is handled by conftest.py
-from ninobyte_opspack.triage import triage_incident, TRIAGE_SCHEMA_VERSION
-from ninobyte_opspack.version import __version__
+from ninobyte_opspack.triage import triage_incident, TRIAGE_PROTOCOL_VERSION
 
 
 # Find repo root and set up paths
@@ -44,8 +43,7 @@ class TestTriageIncidentFunction:
         result = triage_incident(incident)
 
         required_fields = [
-            "version",
-            "opspack_version",
+            "protocol_version",
             "incident",
             "classification",
             "recommended_actions",
@@ -91,13 +89,12 @@ class TestTriageIncidentFunction:
 
         assert json1 == json2, "Output is not deterministic"
 
-    def test_version_fields(self):
-        """Version fields must match expected values."""
+    def test_protocol_version_field(self):
+        """Protocol version field must match expected value."""
         incident = {"id": "TEST-001", "title": "Test"}
         result = triage_incident(incident)
 
-        assert result["version"] == TRIAGE_SCHEMA_VERSION
-        assert result["opspack_version"] == __version__
+        assert result["protocol_version"] == TRIAGE_PROTOCOL_VERSION
 
 
 class TestSecurityBreach:

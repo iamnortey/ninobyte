@@ -60,8 +60,7 @@ The command produces a JSON triage summary:
 
 ```json
 {
-  "version": "1.0.0",
-  "opspack_version": "0.1.0",
+  "protocol_version": "0.1",
   "incident": {
     "id": "INC-2024-001",
     "title": "Database connection timeout",
