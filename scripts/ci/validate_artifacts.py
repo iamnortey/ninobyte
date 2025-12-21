@@ -13,13 +13,14 @@ Exit codes:
     1 - One or more validations failed
 """
 
+import ast
 import filecmp
 import json
 import os
 import re
 import sys
 from pathlib import Path
-from typing import List, Tuple
+from typing import List, Set, Tuple
 
 
 def log_ok(msg: str) -> None:
@@ -189,6 +190,93 @@ def validate_marketplace_json(marketplace_path: Path) -> bool:
         return False
 
 
+def validate_claude_code_marketplace_schema(marketplace_path: Path) -> bool:
+    """
+    Validate Claude Code schema requirements for marketplace.json.
+
+    Claude Code enforces:
+    - plugins[].source MUST start with "./"
+    - source path must resolve to an existing directory
+    - symlink .claude-plugin/products must exist and point to ../products
+
+    See: docs/claude_code_plugin_runbook.md
+    """
+    if not marketplace_path.exists():
+        log_fail(f"marketplace.json not found: {marketplace_path}")
+        return False
+
+    marketplace_dir = marketplace_path.parent
+    all_passed = True
+
+    try:
+        with open(marketplace_path, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+
+        plugins = data.get('plugins', [])
+
+        for i, plugin in enumerate(plugins):
+            source = plugin.get('source', '')
+            plugin_name = plugin.get('name', f'plugin[{i}]')
+
+            # Check 1: source must start with "./"
+            if not source.startswith('./'):
+                log_fail(
+                    f"Claude Code schema violation: {plugin_name} source "
+                    f"'{source}' must start with './' "
+                    f"(Claude Code rejects '../' or bare paths)"
+                )
+                all_passed = False
+                continue
+
+            # Check 2: source path must resolve to existing directory
+            resolved_path = (marketplace_dir / source).resolve()
+            if not resolved_path.is_dir():
+                log_fail(
+                    f"Plugin source path does not exist: {plugin_name} -> {resolved_path}"
+                )
+                all_passed = False
+            else:
+                log_ok(f"Plugin source path exists: {plugin_name} -> {resolved_path}")
+
+        # Check 3: symlink .claude-plugin/products must exist
+        products_symlink = marketplace_dir / 'products'
+        if not products_symlink.exists():
+            log_fail(
+                f"Required symlink missing: {products_symlink}\n"
+                f"    Run: ln -sf ../products {products_symlink}"
+            )
+            all_passed = False
+        elif not products_symlink.is_symlink():
+            log_fail(
+                f"{products_symlink} exists but is not a symlink. "
+                f"Claude Code path resolution requires symlink."
+            )
+            all_passed = False
+        else:
+            # Verify symlink target
+            symlink_target = os.readlink(products_symlink)
+            if symlink_target != '../products':
+                log_fail(
+                    f"Symlink {products_symlink} points to '{symlink_target}', "
+                    f"expected '../products'"
+                )
+                all_passed = False
+            else:
+                log_ok(f"Symlink valid: {products_symlink} -> {symlink_target}")
+
+        if all_passed:
+            log_ok("Claude Code marketplace schema validation passed")
+
+        return all_passed
+
+    except json.JSONDecodeError as e:
+        log_fail(f"marketplace.json is not valid JSON: {marketplace_path} - {e}")
+        return False
+    except Exception as e:
+        log_fail(f"Error validating Claude Code schema: {e}")
+        return False
+
+
 def validate_architecture_review_format(golden_path: Path) -> bool:
     """Validate Architecture Review output format in golden files.
 
@@ -334,6 +422,236 @@ def validate_skill_drift(canonical: Path, plugin: Path) -> bool:
         return True
 
 
+# =============================================================================
+# AirGap MCP Server Validation (v0.2.0+)
+# =============================================================================
+
+# Networking modules that are FORBIDDEN in AirGap default code path
+# NOTE: asyncio and ssl are NOT banned - they are general-purpose libraries.
+# We ban the actual network stacks: socket, http, urllib, requests, etc.
+FORBIDDEN_NETWORK_MODULES: Set[str] = {
+    'socket', 'socketserver',
+    'http', 'http.client', 'http.server',
+    'urllib', 'urllib.request', 'urllib.parse', 'urllib.error',
+    'ftplib', 'smtplib', 'poplib', 'imaplib', 'nntplib', 'telnetlib',
+    'aiohttp', 'httpx', 'requests', 'urllib3',
+    'websocket', 'websockets',
+    'paramiko', 'fabric',
+}
+
+# Modules that are allowed despite appearing network-related
+ALLOWED_NETWORK_EXCEPTIONS: Set[str] = {
+    'subprocess',  # Allowed for ripgrep, but shell=True is banned separately
+}
+
+
+def scan_imports_ast(filepath: Path) -> List[Tuple[str, int, str]]:
+    """
+    Scan a Python file for imports using AST (Abstract Syntax Tree).
+
+    This is more accurate than regex because it:
+    - Handles multi-line imports
+    - Distinguishes comments from real imports
+    - Correctly parses 'from X import Y' statements
+
+    Returns:
+        List of (module_name, line_number, import_statement) tuples
+    """
+    try:
+        with open(filepath, 'r', encoding='utf-8') as f:
+            source = f.read()
+
+        tree = ast.parse(source, filename=str(filepath))
+    except (SyntaxError, UnicodeDecodeError):
+        return []
+
+    imports: List[Tuple[str, int, str]] = []
+
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            for alias in node.names:
+                imports.append((alias.name, node.lineno, f"import {alias.name}"))
+        elif isinstance(node, ast.ImportFrom):
+            if node.module:
+                imports.append((node.module, node.lineno, f"from {node.module} import ..."))
+                # Also check for submodule imports like 'from http.client import ...'
+                parts = node.module.split('.')
+                for i in range(len(parts)):
+                    parent = '.'.join(parts[:i+1])
+                    if parent != node.module:
+                        imports.append((parent, node.lineno, f"from {node.module} import ..."))
+
+    return imports
+
+
+def validate_airgap_no_networking(airgap_src: Path) -> bool:
+    """
+    Validate that AirGap MCP server has no networking imports.
+
+    Uses AST-based scanning to reduce false positives from:
+    - Comments mentioning network modules
+    - String literals containing module names
+    - Docstrings
+
+    This is a HARD GATE - CI fails if networking imports are found.
+    """
+    if not airgap_src.exists():
+        log_info(f"AirGap source not found (skipping): {airgap_src}")
+        return True  # Not a failure if AirGap doesn't exist yet
+
+    all_passed = True
+    violations: List[str] = []
+
+    for py_file in airgap_src.rglob('*.py'):
+        # Skip test files - they may import networking for mocking
+        if 'test' in py_file.name.lower() or 'tests' in py_file.parts:
+            continue
+
+        imports = scan_imports_ast(py_file)
+
+        for module, lineno, stmt in imports:
+            # Check if this module or any parent is forbidden
+            module_parts = module.split('.')
+            for i in range(len(module_parts)):
+                check_module = '.'.join(module_parts[:i+1])
+                if check_module in FORBIDDEN_NETWORK_MODULES:
+                    if check_module not in ALLOWED_NETWORK_EXCEPTIONS:
+                        violations.append(
+                            f"{py_file.relative_to(airgap_src)}:{lineno}: {stmt} "
+                            f"(forbidden: {check_module})"
+                        )
+                        all_passed = False
+                        break
+
+    if violations:
+        log_fail("AirGap networking import violations found:")
+        for v in violations[:20]:
+            print(f"    {v}")
+        if len(violations) > 20:
+            print(f"    ... and {len(violations) - 20} more")
+        print("\n    AirGap security policy: NO networking imports in default code path")
+        return False
+
+    log_ok("AirGap: No forbidden networking imports found")
+    return True
+
+
+def validate_airgap_no_shell_true(airgap_src: Path) -> bool:
+    """
+    Validate that AirGap MCP server never uses shell=True or os.system/os.popen.
+
+    MVP bar for v0.2.0:
+    - Detect literal shell=True keyword argument only (no dataflow tracing)
+    - Detect os.system() and os.popen() calls
+
+    This is a HARD GATE - CI fails if violations are found.
+    """
+    if not airgap_src.exists():
+        return True
+
+    all_passed = True
+    violations: List[str] = []
+
+    for py_file in airgap_src.rglob('*.py'):
+        if 'test' in py_file.name.lower() or 'tests' in py_file.parts:
+            continue
+
+        try:
+            with open(py_file, 'r', encoding='utf-8') as f:
+                source = f.read()
+            tree = ast.parse(source, filename=str(py_file))
+        except (SyntaxError, UnicodeDecodeError):
+            continue
+
+        rel_path = py_file.relative_to(airgap_src)
+
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Call):
+                func_name = None
+                is_os_call = False
+
+                # Check for os.system() and os.popen()
+                if isinstance(node.func, ast.Attribute):
+                    func_name = node.func.attr
+                    # Check if it's os.system or os.popen
+                    if isinstance(node.func.value, ast.Name):
+                        if node.func.value.id == 'os' and func_name in ('system', 'popen'):
+                            is_os_call = True
+                            violations.append(
+                                f"{rel_path}:{node.lineno}: "
+                                f"os.{func_name}() is forbidden"
+                            )
+                            all_passed = False
+                elif isinstance(node.func, ast.Name):
+                    func_name = node.func.id
+
+                # Check for subprocess calls with shell=True (literal only)
+                if not is_os_call and func_name in ('run', 'call', 'Popen', 'check_output', 'check_call'):
+                    for keyword in node.keywords:
+                        if keyword.arg == 'shell':
+                            # Only detect literal True, not variables (MVP scope)
+                            if isinstance(keyword.value, ast.Constant) and keyword.value.value is True:
+                                violations.append(
+                                    f"{rel_path}:{node.lineno}: "
+                                    f"shell=True in {func_name}() call"
+                                )
+                                all_passed = False
+
+    if violations:
+        log_fail("AirGap shell execution violations found:")
+        for v in violations:
+            print(f"    {v}")
+        print("\n    AirGap security policy: NO shell=True, NO os.system(), NO os.popen()")
+        return False
+
+    log_ok("AirGap: No shell execution violations found")
+    return True
+
+
+def validate_airgap_structure(airgap_root: Path) -> bool:
+    """
+    Validate AirGap MCP server directory structure.
+    """
+    if not airgap_root.exists():
+        log_info(f"AirGap directory not found (skipping): {airgap_root}")
+        return True
+
+    all_passed = True
+
+    # Required files
+    required_files = [
+        ('README.md', 'AirGap README'),
+        ('SECURITY.md', 'AirGap Security Policy'),
+        ('src/__init__.py', 'Source package init'),
+    ]
+
+    for rel_path, description in required_files:
+        filepath = airgap_root / rel_path
+        if not filepath.exists():
+            log_fail(f"Missing {description}: {filepath}")
+            all_passed = False
+        else:
+            log_ok(f"{description} exists")
+
+    # Required source modules
+    required_modules = [
+        'config.py', 'path_security.py', 'audit.py', 'timeout.py',
+        'list_dir.py', 'read_file.py', 'search_text.py', 'redact_preview.py'
+    ]
+
+    src_dir = airgap_root / 'src'
+    if src_dir.exists():
+        for module in required_modules:
+            if not (src_dir / module).exists():
+                log_fail(f"Missing AirGap module: src/{module}")
+                all_passed = False
+    else:
+        log_fail(f"AirGap src directory not found: {src_dir}")
+        all_passed = False
+
+    return all_passed
+
+
 def scan_for_secrets(root: Path) -> bool:
     """Scan for potential hardcoded secrets in tracked files."""
     secret_patterns = [
@@ -406,6 +724,11 @@ def main() -> int:
     if not validate_marketplace_json(marketplace_path):
         all_passed = False
 
+    # 1b. Claude Code schema validation (v0.1.3+)
+    print("\n--- Claude Code Marketplace Schema (v0.1.3) ---")
+    if not validate_claude_code_marketplace_schema(marketplace_path):
+        all_passed = False
+
     # 2. Validate plugin structure
     print("\n--- Plugin Structure Validation ---")
     plugin_root = repo_root / 'products' / 'claude-code-plugins' / 'ninobyte-senior-dev-brain'
@@ -475,6 +798,20 @@ def main() -> int:
     # 7. Security scan
     print("\n--- Security Scan ---")
     scan_for_secrets(repo_root)
+
+    # 8. AirGap MCP Server validation (v0.2.0+)
+    # Canonical path: products/mcp-servers/ninobyte-airgap/
+    print("\n--- Ninobyte AirGap MCP Server Validation (v0.2.0) ---")
+    airgap_root = repo_root / 'products' / 'mcp-servers' / 'ninobyte-airgap'
+    if airgap_root.exists():
+        if not validate_airgap_structure(airgap_root):
+            all_passed = False
+        if not validate_airgap_no_networking(airgap_root / 'src'):
+            all_passed = False
+        if not validate_airgap_no_shell_true(airgap_root / 'src'):
+            all_passed = False
+    else:
+        log_info("Ninobyte AirGap MCP server not yet implemented (skipping)")
 
     # Summary
     print(f"\n{'='*60}")
