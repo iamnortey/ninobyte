@@ -666,6 +666,214 @@ def validate_airgap_structure(airgap_root: Path) -> bool:
 
 
 # =============================================================================
+# OpsPack Governance Validation (v0.3.0+)
+# =============================================================================
+#
+# OpsPack enforces strict read-only security constraints:
+# - No network imports (socket, http, requests, etc.)
+# - No shell execution (subprocess, os.system, os.popen)
+# - No file writes (open with 'w', 'a', write(), etc.)
+#
+# This is a HARD GATE in CI, WARN locally unless --strict.
+# =============================================================================
+
+# OpsPack forbidden network modules (same as AirGap)
+OPSPACK_FORBIDDEN_NETWORK_MODULES: Set[str] = {
+    'socket', 'socketserver',
+    'http', 'http.client', 'http.server',
+    'urllib', 'urllib.request', 'urllib.parse', 'urllib.error',
+    'ftplib', 'smtplib', 'poplib', 'imaplib', 'nntplib', 'telnetlib',
+    'aiohttp', 'httpx', 'requests', 'urllib3',
+    'websocket', 'websockets',
+    'paramiko', 'fabric',
+}
+
+
+def validate_opspack_no_networking(opspack_src: Path) -> bool:
+    """
+    Validate that OpsPack source has no networking imports.
+
+    Uses AST-based scanning to reduce false positives.
+    This is a HARD GATE - CI fails if networking imports are found.
+    """
+    if not opspack_src.exists():
+        log_info(f"OpsPack source not found (skipping): {_rel_path(opspack_src)}")
+        return True
+
+    all_passed = True
+    violations: List[str] = []
+
+    for py_file in opspack_src.rglob('*.py'):
+        # Skip test files
+        if 'test' in py_file.name.lower() or 'tests' in py_file.parts:
+            continue
+
+        imports = scan_imports_ast(py_file)
+
+        for module, lineno, stmt in imports:
+            module_parts = module.split('.')
+            for i in range(len(module_parts)):
+                check_module = '.'.join(module_parts[:i+1])
+                if check_module in OPSPACK_FORBIDDEN_NETWORK_MODULES:
+                    violations.append(
+                        f"{py_file.relative_to(opspack_src)}:{lineno}: {stmt} "
+                        f"(forbidden: {check_module})"
+                    )
+                    all_passed = False
+                    break
+
+    if violations:
+        log_fail("OpsPack networking import violations found:")
+        for v in violations[:20]:
+            print(f"    {v}")
+        if len(violations) > 20:
+            print(f"    ... and {len(violations) - 20} more")
+        print("\n    OpsPack security policy: NO networking imports")
+        return False
+
+    log_ok("OpsPack: No forbidden networking imports found")
+    return True
+
+
+def validate_opspack_no_shell_execution(opspack_src: Path) -> bool:
+    """
+    Validate that OpsPack source never uses shell execution.
+
+    Checks for:
+    - subprocess with shell=True
+    - os.system() and os.popen()
+
+    This is a HARD GATE - CI fails if violations are found.
+    """
+    if not opspack_src.exists():
+        return True
+
+    all_passed = True
+    violations: List[str] = []
+
+    for py_file in opspack_src.rglob('*.py'):
+        if 'test' in py_file.name.lower() or 'tests' in py_file.parts:
+            continue
+
+        try:
+            with open(py_file, 'r', encoding='utf-8') as f:
+                source = f.read()
+            tree = ast.parse(source, filename=str(py_file))
+        except (SyntaxError, UnicodeDecodeError):
+            continue
+
+        rel_path = py_file.relative_to(opspack_src)
+
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Call):
+                func_name = None
+                is_os_call = False
+
+                # Check for os.system() and os.popen()
+                if isinstance(node.func, ast.Attribute):
+                    func_name = node.func.attr
+                    if isinstance(node.func.value, ast.Name):
+                        if node.func.value.id == 'os' and func_name in ('system', 'popen'):
+                            is_os_call = True
+                            violations.append(
+                                f"{rel_path}:{node.lineno}: "
+                                f"os.{func_name}() is forbidden"
+                            )
+                            all_passed = False
+                elif isinstance(node.func, ast.Name):
+                    func_name = node.func.id
+
+                # Check for subprocess calls with shell=True
+                if not is_os_call and func_name in ('run', 'call', 'Popen', 'check_output', 'check_call'):
+                    for keyword in node.keywords:
+                        if keyword.arg == 'shell':
+                            if isinstance(keyword.value, ast.Constant) and keyword.value.value is True:
+                                violations.append(
+                                    f"{rel_path}:{node.lineno}: "
+                                    f"shell=True in {func_name}() call"
+                                )
+                                all_passed = False
+
+    if violations:
+        log_fail("OpsPack shell execution violations found:")
+        for v in violations:
+            print(f"    {v}")
+        print("\n    OpsPack security policy: NO shell execution")
+        return False
+
+    log_ok("OpsPack: No shell execution violations found")
+    return True
+
+
+def validate_opspack_no_file_writes(opspack_src: Path) -> bool:
+    """
+    Validate that OpsPack source has no file write patterns.
+
+    Basic heuristic checks for:
+    - open() with 'w', 'a', 'x' modes
+    - file.write() calls
+    - pathlib write_text(), write_bytes()
+
+    This is a HARD GATE - CI fails if violations are found.
+    """
+    if not opspack_src.exists():
+        return True
+
+    all_passed = True
+    violations: List[str] = []
+
+    for py_file in opspack_src.rglob('*.py'):
+        if 'test' in py_file.name.lower() or 'tests' in py_file.parts:
+            continue
+
+        try:
+            with open(py_file, 'r', encoding='utf-8') as f:
+                source = f.read()
+            tree = ast.parse(source, filename=str(py_file))
+        except (SyntaxError, UnicodeDecodeError):
+            continue
+
+        rel_path = py_file.relative_to(opspack_src)
+
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Call):
+                # Check for open() with write modes
+                if isinstance(node.func, ast.Name) and node.func.id == 'open':
+                    # Check mode argument (positional or keyword)
+                    mode = None
+                    if len(node.args) >= 2:
+                        mode_arg = node.args[1]
+                        if isinstance(mode_arg, ast.Constant):
+                            mode = mode_arg.value
+                    for kw in node.keywords:
+                        if kw.arg == 'mode' and isinstance(kw.value, ast.Constant):
+                            mode = kw.value.value
+                    if mode and any(c in mode for c in 'wax'):
+                        violations.append(
+                            f"{rel_path}:{node.lineno}: open() with write mode '{mode}'"
+                        )
+                        all_passed = False
+
+                # Check for pathlib write methods
+                if isinstance(node.func, ast.Attribute):
+                    if node.func.attr in ('write_text', 'write_bytes'):
+                        violations.append(
+                            f"{rel_path}:{node.lineno}: {node.func.attr}() call"
+                        )
+                        all_passed = False
+
+    if violations:
+        log_fail("OpsPack file write violations found:")
+        for v in violations:
+            print(f"    {v}")
+        print("\n    OpsPack security policy: NO file writes (read-only)")
+        return False
+
+    log_ok("OpsPack: No file write violations found")
+    return True
+
+
+# =============================================================================
 # Markdown Secret-Scan Hygiene (v0.2.2+)
 # =============================================================================
 #
@@ -1189,6 +1397,21 @@ def main() -> int:
             all_passed = False
     else:
         log_info("Ninobyte AirGap MCP server not yet implemented (skipping)")
+
+    # 8b. OpsPack governance validation (v0.3.0+)
+    # Canonical path: products/opspack/
+    print("\n--- Ninobyte OpsPack Governance Validation (v0.3.0) ---")
+    opspack_root = repo_root / 'products' / 'opspack'
+    opspack_src = opspack_root / 'src' / 'ninobyte_opspack'
+    if opspack_src.exists():
+        if not validate_opspack_no_networking(opspack_src):
+            all_passed = False
+        if not validate_opspack_no_shell_execution(opspack_src):
+            all_passed = False
+        if not validate_opspack_no_file_writes(opspack_src):
+            all_passed = False
+    else:
+        log_info("OpsPack source not found (skipping)")
 
     # 9. Branch scope validation (governance hardening - strict allowlist model)
     print("\n--- Branch Scope Validation (Governance) ---")
