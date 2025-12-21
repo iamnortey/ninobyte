@@ -23,6 +23,19 @@ from pathlib import Path
 from typing import List, Set, Tuple
 
 
+# Global repo root for relative path formatting (set in main())
+_REPO_ROOT: Path = Path(".")
+
+
+def _rel_path(p: Path) -> str:
+    """Convert a path to repo-relative format for clean logging output."""
+    try:
+        return "./" + str(p.relative_to(_REPO_ROOT))
+    except ValueError:
+        # Path is not under repo root; return as-is but avoid absolute leakage
+        return "./" + p.name
+
+
 def log_ok(msg: str) -> None:
     print(f"✅ {msg}")
 
@@ -42,43 +55,43 @@ def log_info(msg: str) -> None:
 def validate_json_file(path: Path, description: str) -> bool:
     """Validate that a JSON file exists and is valid JSON."""
     if not path.exists():
-        log_fail(f"{description} not found: {path}")
+        log_fail(f"{description} not found: {_rel_path(path)}")
         return False
 
     try:
         with open(path, 'r', encoding='utf-8') as f:
             json.load(f)
-        log_ok(f"{description} exists and is valid JSON: {path}")
+        log_ok(f"{description} exists and is valid JSON: {_rel_path(path)}")
         return True
     except json.JSONDecodeError as e:
-        log_fail(f"{description} is not valid JSON: {path} - {e}")
+        log_fail(f"{description} is not valid JSON: {_rel_path(path)} - {e}")
         return False
 
 
 def validate_file_exists(path: Path, description: str) -> bool:
     """Validate that a file exists."""
     if path.exists():
-        log_ok(f"{description} exists: {path}")
+        log_ok(f"{description} exists: {_rel_path(path)}")
         return True
     else:
-        log_fail(f"{description} not found: {path}")
+        log_fail(f"{description} not found: {_rel_path(path)}")
         return False
 
 
 def validate_directory_exists(path: Path, description: str) -> bool:
     """Validate that a directory exists."""
     if path.is_dir():
-        log_ok(f"{description} exists: {path}")
+        log_ok(f"{description} exists: {_rel_path(path)}")
         return True
     else:
-        log_fail(f"{description} not found: {path}")
+        log_fail(f"{description} not found: {_rel_path(path)}")
         return False
 
 
 def validate_skill_frontmatter(skill_path: Path) -> bool:
     """Validate that SKILL.md has required YAML frontmatter."""
     if not skill_path.exists():
-        log_fail(f"SKILL.md not found: {skill_path}")
+        log_fail(f"SKILL.md not found: {_rel_path(skill_path)}")
         return False
 
     try:
@@ -87,13 +100,13 @@ def validate_skill_frontmatter(skill_path: Path) -> bool:
 
         # Check for frontmatter
         if not content.startswith('---'):
-            log_fail(f"SKILL.md missing YAML frontmatter: {skill_path}")
+            log_fail(f"SKILL.md missing YAML frontmatter: {_rel_path(skill_path)}")
             return False
 
         # Find end of frontmatter
         end_match = content.find('---', 3)
         if end_match == -1:
-            log_fail(f"SKILL.md has unclosed frontmatter: {skill_path}")
+            log_fail(f"SKILL.md has unclosed frontmatter: {_rel_path(skill_path)}")
             return False
 
         frontmatter = content[3:end_match].strip()
@@ -103,25 +116,25 @@ def validate_skill_frontmatter(skill_path: Path) -> bool:
         has_description = re.search(r'^description:\s*.+', frontmatter, re.MULTILINE)
 
         if not has_name:
-            log_fail(f"SKILL.md missing 'name' in frontmatter: {skill_path}")
+            log_fail(f"SKILL.md missing 'name' in frontmatter: {_rel_path(skill_path)}")
             return False
 
         if not has_description:
-            log_fail(f"SKILL.md missing 'description' in frontmatter: {skill_path}")
+            log_fail(f"SKILL.md missing 'description' in frontmatter: {_rel_path(skill_path)}")
             return False
 
-        log_ok(f"SKILL.md has valid frontmatter with name and description: {skill_path}")
+        log_ok(f"SKILL.md has valid frontmatter with name and description: {_rel_path(skill_path)}")
         return True
 
     except Exception as e:
-        log_fail(f"Error reading SKILL.md: {skill_path} - {e}")
+        log_fail(f"Error reading SKILL.md: {_rel_path(skill_path)} - {e}")
         return False
 
 
 def validate_plugin_json(plugin_json_path: Path) -> bool:
     """Validate plugin.json has required fields."""
     if not plugin_json_path.exists():
-        log_fail(f"plugin.json not found: {plugin_json_path}")
+        log_fail(f"plugin.json not found: {_rel_path(plugin_json_path)}")
         return False
 
     try:
@@ -130,7 +143,7 @@ def validate_plugin_json(plugin_json_path: Path) -> bool:
 
         # Check required field
         if 'name' not in data:
-            log_fail(f"plugin.json missing 'name' field: {plugin_json_path}")
+            log_fail(f"plugin.json missing 'name' field: {_rel_path(plugin_json_path)}")
             return False
 
         # Validate name is kebab-case
@@ -138,18 +151,18 @@ def validate_plugin_json(plugin_json_path: Path) -> bool:
         if not re.match(r'^[a-z][a-z0-9-]*$', name):
             log_warn(f"plugin.json 'name' should be kebab-case: {name}")
 
-        log_ok(f"plugin.json is valid: {plugin_json_path}")
+        log_ok(f"plugin.json is valid: {_rel_path(plugin_json_path)}")
         return True
 
     except json.JSONDecodeError as e:
-        log_fail(f"plugin.json is not valid JSON: {plugin_json_path} - {e}")
+        log_fail(f"plugin.json is not valid JSON: {_rel_path(plugin_json_path)} - {e}")
         return False
 
 
 def validate_marketplace_json(marketplace_path: Path) -> bool:
     """Validate marketplace.json has required fields."""
     if not marketplace_path.exists():
-        log_fail(f"marketplace.json not found: {marketplace_path}")
+        log_fail(f"marketplace.json not found: {_rel_path(marketplace_path)}")
         return False
 
     try:
@@ -182,11 +195,11 @@ def validate_marketplace_json(marketplace_path: Path) -> bool:
                 log_fail(f"marketplace.json: {error}")
             return False
 
-        log_ok(f"marketplace.json is valid: {marketplace_path}")
+        log_ok(f"marketplace.json is valid: {_rel_path(marketplace_path)}")
         return True
 
     except json.JSONDecodeError as e:
-        log_fail(f"marketplace.json is not valid JSON: {marketplace_path} - {e}")
+        log_fail(f"marketplace.json is not valid JSON: {_rel_path(marketplace_path)} - {e}")
         return False
 
 
@@ -202,7 +215,7 @@ def validate_claude_code_marketplace_schema(marketplace_path: Path) -> bool:
     See: docs/claude_code_plugin_runbook.md
     """
     if not marketplace_path.exists():
-        log_fail(f"marketplace.json not found: {marketplace_path}")
+        log_fail(f"marketplace.json not found: {_rel_path(marketplace_path)}")
         return False
 
     marketplace_dir = marketplace_path.parent
@@ -232,23 +245,23 @@ def validate_claude_code_marketplace_schema(marketplace_path: Path) -> bool:
             resolved_path = (marketplace_dir / source).resolve()
             if not resolved_path.is_dir():
                 log_fail(
-                    f"Plugin source path does not exist: {plugin_name} -> {resolved_path}"
+                    f"Plugin source path does not exist: {plugin_name} -> {_rel_path(resolved_path)}"
                 )
                 all_passed = False
             else:
-                log_ok(f"Plugin source path exists: {plugin_name} -> {resolved_path}")
+                log_ok(f"Plugin source path exists: {plugin_name} -> {_rel_path(resolved_path)}")
 
         # Check 3: symlink .claude-plugin/products must exist
         products_symlink = marketplace_dir / 'products'
         if not products_symlink.exists():
             log_fail(
-                f"Required symlink missing: {products_symlink}\n"
-                f"    Run: ln -sf ../products {products_symlink}"
+                f"Required symlink missing: {_rel_path(products_symlink)}\n"
+                f"    Run: ln -sf ../products .claude-plugin/products"
             )
             all_passed = False
         elif not products_symlink.is_symlink():
             log_fail(
-                f"{products_symlink} exists but is not a symlink. "
+                f"{_rel_path(products_symlink)} exists but is not a symlink. "
                 f"Claude Code path resolution requires symlink."
             )
             all_passed = False
@@ -257,12 +270,12 @@ def validate_claude_code_marketplace_schema(marketplace_path: Path) -> bool:
             symlink_target = os.readlink(products_symlink)
             if symlink_target != '../products':
                 log_fail(
-                    f"Symlink {products_symlink} points to '{symlink_target}', "
+                    f"Symlink {_rel_path(products_symlink)} points to '{symlink_target}', "
                     f"expected '../products'"
                 )
                 all_passed = False
             else:
-                log_ok(f"Symlink valid: {products_symlink} -> {symlink_target}")
+                log_ok(f"Symlink valid: {_rel_path(products_symlink)} -> {symlink_target}")
 
         if all_passed:
             log_ok("Claude Code marketplace schema validation passed")
@@ -270,7 +283,7 @@ def validate_claude_code_marketplace_schema(marketplace_path: Path) -> bool:
         return all_passed
 
     except json.JSONDecodeError as e:
-        log_fail(f"marketplace.json is not valid JSON: {marketplace_path} - {e}")
+        log_fail(f"marketplace.json is not valid JSON: {_rel_path(marketplace_path)} - {e}")
         return False
     except Exception as e:
         log_fail(f"Error validating Claude Code schema: {e}")
@@ -287,7 +300,7 @@ def validate_architecture_review_format(golden_path: Path) -> bool:
     - CRITICAL flags for known security issues
     """
     if not golden_path.exists():
-        log_fail(f"Golden file not found: {golden_path}")
+        log_fail(f"Golden file not found: {_rel_path(golden_path)}")
         return False
 
     try:
@@ -346,12 +359,12 @@ def validate_architecture_review_format(golden_path: Path) -> bool:
                 all_passed = False
 
         if all_passed:
-            log_ok(f"Architecture Review format validation passed: {golden_path}")
+            log_ok(f"Architecture Review format validation passed: {_rel_path(golden_path)}")
 
         return all_passed
 
     except Exception as e:
-        log_fail(f"Error validating Architecture Review format: {golden_path} - {e}")
+        log_fail(f"Error validating Architecture Review format: {_rel_path(golden_path)} - {e}")
         return False
 
 
@@ -363,11 +376,11 @@ def validate_skill_drift(canonical: Path, plugin: Path) -> bool:
     Developers should run: python scripts/ops/sync_plugin_skills.py --sync
     """
     if not canonical.exists():
-        log_fail(f"Canonical skill not found: {canonical}")
+        log_fail(f"Canonical skill not found: {_rel_path(canonical)}")
         return False
 
     if not plugin.exists():
-        log_fail(f"Plugin skill not found: {plugin}")
+        log_fail(f"Plugin skill not found: {_rel_path(plugin)}")
         return False
 
     missing_in_plugin: List[str] = []
@@ -496,7 +509,7 @@ def validate_airgap_no_networking(airgap_src: Path) -> bool:
     This is a HARD GATE - CI fails if networking imports are found.
     """
     if not airgap_src.exists():
-        log_info(f"AirGap source not found (skipping): {airgap_src}")
+        log_info(f"AirGap source not found (skipping): {_rel_path(airgap_src)}")
         return True  # Not a failure if AirGap doesn't exist yet
 
     all_passed = True
@@ -613,7 +626,7 @@ def validate_airgap_structure(airgap_root: Path) -> bool:
     Validate AirGap MCP server directory structure.
     """
     if not airgap_root.exists():
-        log_info(f"AirGap directory not found (skipping): {airgap_root}")
+        log_info(f"AirGap directory not found (skipping): {_rel_path(airgap_root)}")
         return True
 
     all_passed = True
@@ -628,7 +641,7 @@ def validate_airgap_structure(airgap_root: Path) -> bool:
     for rel_path, description in required_files:
         filepath = airgap_root / rel_path
         if not filepath.exists():
-            log_fail(f"Missing {description}: {filepath}")
+            log_fail(f"Missing {description}: {_rel_path(filepath)}")
             all_passed = False
         else:
             log_ok(f"{description} exists")
@@ -646,10 +659,134 @@ def validate_airgap_structure(airgap_root: Path) -> bool:
                 log_fail(f"Missing AirGap module: src/{module}")
                 all_passed = False
     else:
-        log_fail(f"AirGap src directory not found: {src_dir}")
+        log_fail(f"AirGap src directory not found: {_rel_path(src_dir)}")
         all_passed = False
 
     return all_passed
+
+
+# =============================================================================
+# Markdown Secret-Scan Hygiene (v0.2.2+)
+# =============================================================================
+#
+# ROLLOUT POLICY AND RATIONALE:
+# -----------------------------
+# This gate enforces that markdown files in products/**/docs/ and products/**/tests/
+# do not contain static patterns that trigger secret scanners (PEM headers, AWS keys, etc.).
+#
+# Policy: HARD FAIL (Option A - Single PR with minimal collateral)
+# - The gate is a HARD FAIL in CI from day one.
+# - Any existing violations MUST be fixed in the same PR that introduces this gate.
+# - Branch scope rules (BRANCH_SCOPE_ALLOWLISTS) explicitly permit fix/ci-* branches
+#   to touch products/**/docs/**/*.md and products/**/tests/**/*.md for this purpose.
+# - No other product paths are allowed, preventing scope creep.
+#
+# Rationale:
+# - Soft-launch (WARN-only) would allow violations to accumulate, defeating the purpose.
+# - The allowlist model ensures collateral fixes stay within markdown documentation only.
+# - This is a one-time compliance sweep; future violations fail immediately.
+#
+# =============================================================================
+
+# Disallowed patterns in markdown files (docs and tests)
+# These patterns trigger secret scanners and should use composed strings instead
+MARKDOWN_DISALLOWED_PATTERNS: List[Tuple[str, str, str]] = [
+    # (regex pattern, pattern name, remediation hint)
+    (
+        r'-----BEGIN\s+(RSA\s+)?PRIV' + r'ATE\s+KEY-----',
+        'Private key marker',
+        'Use composed strings: "-----BEGIN " + "PRIV" + "ATE KEY-----"'
+    ),
+    (
+        r'-----END\s+(RSA\s+)?PRIV' + r'ATE\s+KEY-----',
+        'Private key end marker',
+        'Use composed strings: "-----END " + "PRIV" + "ATE KEY-----"'
+    ),
+    (
+        r'AWS_SEC' + r'RET_ACCESS_KEY',
+        'AWS secret key variable',
+        'Use composed strings or describe generically'
+    ),
+    (
+        r'pass' + r'word\s*=',
+        'Literal credential assignment',
+        'Use composed strings: "pass" + "word="'
+    ),
+    (
+        r'PASS' + r'WORD\s*=',
+        'Literal credential assignment (uppercase)',
+        'Use composed strings: "PASS" + "WORD="'
+    ),
+]
+
+
+def validate_markdown_secret_hygiene(products_root: Path) -> bool:
+    """
+    Validate that markdown files in docs and tests directories do not contain
+    static secret-scan signatures.
+
+    This is a HARD GATE - CI fails if disallowed patterns are found.
+
+    Scans:
+    - products/**/docs/**/*.md
+    - products/**/tests/**/*.md
+    """
+    if not products_root.exists():
+        log_info(f"Products directory not found (skipping): {_rel_path(products_root)}")
+        return True
+
+    all_passed = True
+    violations: List[str] = []
+
+    # Collect markdown files from docs/ and tests/ subdirectories
+    markdown_files: List[Path] = []
+
+    for product_dir in products_root.iterdir():
+        if not product_dir.is_dir():
+            continue
+
+        # Recursively find docs and tests directories
+        for subdir in product_dir.rglob('*'):
+            if subdir.is_dir() and subdir.name in ('docs', 'tests'):
+                for md_file in subdir.rglob('*.md'):
+                    markdown_files.append(md_file)
+
+    if not markdown_files:
+        log_info("No markdown files found in products/**/docs/ or products/**/tests/")
+        return True
+
+    # Scan each markdown file
+    for md_file in markdown_files:
+        try:
+            with open(md_file, 'r', encoding='utf-8') as f:
+                content = f.read()
+
+            rel_path = md_file.relative_to(products_root.parent)
+
+            for pattern, pattern_name, hint in MARKDOWN_DISALLOWED_PATTERNS:
+                if re.search(pattern, content, re.IGNORECASE):
+                    violations.append(
+                        f"{rel_path}: {pattern_name}\n"
+                        f"      Hint: {hint}"
+                    )
+                    all_passed = False
+
+        except Exception as e:
+            log_warn(f"Could not read {md_file}: {e}")
+
+    if violations:
+        log_fail("Markdown secret-scan hygiene violations found:")
+        for v in violations[:20]:
+            print(f"    {v}")
+        if len(violations) > 20:
+            print(f"    ... and {len(violations) - 20} more")
+        print()
+        print("    Policy: Markdown files in docs/ and tests/ must not contain")
+        print("    static secret-scan signatures. Use composed strings instead.")
+        return False
+
+    log_ok(f"Markdown secret-scan hygiene passed ({len(markdown_files)} files scanned)")
+    return True
 
 
 def scan_for_secrets(root: Path) -> bool:
@@ -705,18 +842,252 @@ def scan_for_secrets(root: Path) -> bool:
     return True
 
 
+# =============================================================================
+# Branch Scope Linter (Governance Hardening)
+# =============================================================================
+#
+# SCOPE POLICY (Strict Allowlist Model):
+# Each branch prefix has an EXPLICIT allowlist of paths it may touch.
+# Any file not matching the allowlist is a violation.
+#
+# This prevents "kitchen sink" PRs where unrelated changes sneak in.
+# =============================================================================
+
+# Branch scope rules using ALLOWLIST model
+# Format: (branch_prefix, allowed_patterns, violation_message)
+# A file MUST match at least one allowed pattern, or it's a violation.
+BRANCH_SCOPE_ALLOWLISTS: List[Tuple[str, List[str], str]] = [
+    # ci/* branches: only CI scripts and GitHub workflows
+    (
+        "ci/",
+        [
+            "scripts/ci/**",
+            ".github/**",
+            "*.md",  # Repo-level markdown only (README, CONTRIBUTING, etc.)
+        ],
+        "ci/* branches may only touch scripts/ci/**, .github/**, or repo-level *.md"
+    ),
+    # docs/* branches: only documentation
+    (
+        "docs/",
+        [
+            "docs/**",
+            "*.md",  # Repo-level markdown
+        ],
+        "docs/* branches may only touch docs/** or repo-level *.md"
+    ),
+    # fix/ci-* branches: CI scripts + NARROW markdown collateral
+    # This is NOT a broad exemption. Only specific markdown paths are allowed.
+    (
+        "fix/ci-",
+        [
+            "scripts/ci/**",
+            ".github/**",
+            "*.md",  # Repo-level markdown
+            "products/**/docs/**/*.md",   # Product docs markdown ONLY
+            "products/**/tests/**/*.md",  # Product tests markdown ONLY
+        ],
+        "fix/ci-* branches may touch scripts/ci/**, .github/**, repo-level *.md, "
+        "and ONLY markdown under products/**/docs/ or products/**/tests/"
+    ),
+]
+
+
+def _glob_match(filepath: str, pattern: str) -> bool:
+    """Match filepath against a glob pattern with ** support.
+
+    Handles:
+    - ** matches zero or more directory levels
+    - * matches any characters except /
+    - ? matches single character
+    """
+    import re
+
+    # Convert glob pattern to regex
+    regex_parts = []
+    i = 0
+    while i < len(pattern):
+        if pattern[i:i+2] == '**':
+            regex_parts.append('.*')  # Match anything including /
+            i += 2
+            if i < len(pattern) and pattern[i] == '/':
+                i += 1  # Skip trailing / after **
+        elif pattern[i] == '*':
+            regex_parts.append('[^/]*')  # Match anything except /
+            i += 1
+        elif pattern[i] == '?':
+            regex_parts.append('[^/]')
+            i += 1
+        elif pattern[i] in '.^$+{}[]|()\\':
+            regex_parts.append('\\' + pattern[i])
+            i += 1
+        else:
+            regex_parts.append(pattern[i])
+            i += 1
+
+    regex = '^' + ''.join(regex_parts) + '$'
+    return bool(re.match(regex, filepath))
+
+
+def _matches_any_pattern(filepath: str, patterns: List[str]) -> bool:
+    """Check if filepath matches any of the given glob patterns.
+
+    Pattern semantics:
+    - Patterns without '/' (e.g., '*.md') only match files at repo root.
+    - Patterns with '/' use _glob_match for proper ** support.
+    """
+    for pattern in patterns:
+        if '/' not in pattern:
+            # Repo-root pattern: only match files without directory separators
+            if '/' not in filepath and _glob_match(filepath, pattern):
+                return True
+        else:
+            # Path pattern: use glob matching with ** support
+            if _glob_match(filepath, pattern):
+                return True
+    return False
+
+
+def validate_branch_scope(
+    branch_name: str,
+    changed_files: List[str],
+    is_ci: bool = False,
+    strict: bool = False
+) -> bool:
+    """
+    Validate that a branch only touches files within its declared scope.
+
+    Uses STRICT ALLOWLIST model: files must match an allowed pattern.
+    No broad exemptions - every path must be explicitly permitted.
+
+    Args:
+        branch_name: The branch name (e.g., "ci/markdown-policy" or "feat/new-feature")
+        changed_files: List of changed file paths relative to repo root
+        is_ci: If True (or in CI env), violations are HARD FAIL.
+        strict: If True, force hard-fail mode even locally (--strict flag).
+
+    Returns:
+        True if scope is valid, False if violations found and should fail.
+    """
+    # Determine if we should hard-fail
+    hard_fail = is_ci or strict
+
+    all_passed = True
+    matched_rule = False
+
+    for prefix, allowed_patterns, violation_msg in BRANCH_SCOPE_ALLOWLISTS:
+        if not branch_name.startswith(prefix):
+            continue
+
+        matched_rule = True
+        violations: List[str] = []
+
+        for filepath in changed_files:
+            if not _matches_any_pattern(filepath, allowed_patterns):
+                violations.append(f"  - {filepath}")
+
+        if violations:
+            if hard_fail:
+                log_fail(f"Branch scope violation: {violation_msg}")
+                print("\n    Files outside allowed scope:")
+                for v in violations[:15]:
+                    print(f"    {v}")
+                if len(violations) > 15:
+                    print(f"    ... and {len(violations) - 15} more")
+                print("\n    Allowed patterns for this branch type:")
+                for p in allowed_patterns:
+                    print(f"      - {p}")
+                all_passed = False
+            else:
+                log_warn(f"Branch scope warning: {violation_msg}")
+                print("    (Use --strict or run in CI for hard failure)")
+                for v in violations[:5]:
+                    print(f"    {v}")
+
+        break  # Only check first matching rule
+
+    if matched_rule and all_passed:
+        log_ok(f"Branch scope valid: '{branch_name}' (strict allowlist)")
+    elif not matched_rule:
+        # No rule matched - branch type has no restrictions (e.g., feat/*, chore/*)
+        log_info(f"Branch '{branch_name}' has no scope restrictions (unregulated prefix)")
+
+    return all_passed
+
+
+
+def get_changed_files_vs_main(repo_root: Path) -> List[str]:
+    """Get list of files changed between current HEAD and origin/main."""
+    import subprocess
+
+    try:
+        result = subprocess.run(
+            ["git", "diff", "--name-only", "origin/main...HEAD"],
+            cwd=repo_root,
+            capture_output=True,
+            text=True,
+            check=True
+        )
+        files = [f.strip() for f in result.stdout.strip().split('\n') if f.strip()]
+        return files
+    except subprocess.CalledProcessError:
+        log_warn("Could not determine changed files (git diff failed)")
+        return []
+
+
+def get_branch_name() -> str:
+    """Get branch name from environment or git."""
+    import subprocess
+
+    # CI environment variables (GitHub Actions)
+    branch = os.environ.get("GITHUB_HEAD_REF")  # PR source branch
+    if not branch:
+        branch = os.environ.get("GITHUB_REF_NAME")  # Push branch
+
+    if branch:
+        return branch
+
+    # Fall back to git
+    try:
+        result = subprocess.run(
+            ["git", "branch", "--show-current"],
+            capture_output=True,
+            text=True,
+            check=True
+        )
+        return result.stdout.strip()
+    except subprocess.CalledProcessError:
+        return ""
+
+
 def main() -> int:
-    """Run all validations."""
+    """Run all validations.
+
+    Supports --strict flag to force hard-fail mode for scope violations locally.
+    """
+    global _REPO_ROOT
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Ninobyte Artifact Validation")
+    parser.add_argument(
+        "--strict",
+        action="store_true",
+        help="Force hard-fail mode for branch scope violations (default in CI)"
+    )
+    args = parser.parse_args()
+
     # Determine repo root
     script_path = Path(__file__).resolve()
     repo_root = script_path.parent.parent.parent
+    _REPO_ROOT = repo_root  # Set global for _rel_path()
 
     print(f"\n{'='*60}")
     print("Ninobyte Artifact Validation")
     print(f"{'='*60}")
-    print(f"Repo root: {repo_root}\n")
+    print(f"Repo root: {repo_root.name}\n")
 
     all_passed = True
+    strict_mode = args.strict
 
     # 1. Validate marketplace
     print("\n--- Marketplace Validation ---")
@@ -799,6 +1170,12 @@ def main() -> int:
     print("\n--- Security Scan ---")
     scan_for_secrets(repo_root)
 
+    # 7b. Markdown secret-scan hygiene (v0.2.2+)
+    print("\n--- Markdown Secret-Scan Hygiene (v0.2.2) ---")
+    products_root = repo_root / 'products'
+    if not validate_markdown_secret_hygiene(products_root):
+        all_passed = False
+
     # 8. AirGap MCP Server validation (v0.2.0+)
     # Canonical path: products/mcp-servers/ninobyte-airgap/
     print("\n--- Ninobyte AirGap MCP Server Validation (v0.2.0) ---")
@@ -812,6 +1189,26 @@ def main() -> int:
             all_passed = False
     else:
         log_info("Ninobyte AirGap MCP server not yet implemented (skipping)")
+
+    # 9. Branch scope validation (governance hardening - strict allowlist model)
+    print("\n--- Branch Scope Validation (Governance) ---")
+    branch_name = get_branch_name()
+    if branch_name and branch_name != "main":
+        changed_files = get_changed_files_vs_main(repo_root)
+        if changed_files:
+            # Detect if running in CI (always strict) or if --strict was passed
+            is_ci = bool(os.environ.get("CI") or os.environ.get("GITHUB_ACTIONS"))
+            if not validate_branch_scope(
+                branch_name,
+                changed_files,
+                is_ci=is_ci,
+                strict=strict_mode
+            ):
+                all_passed = False
+        else:
+            log_info("No changed files detected (skipping scope check)")
+    else:
+        log_info(f"On main branch or unknown branch (skipping scope check)")
 
     # Summary
     print(f"\n{'='*60}")
