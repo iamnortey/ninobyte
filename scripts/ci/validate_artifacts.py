@@ -893,13 +893,58 @@ BRANCH_SCOPE_ALLOWLISTS: List[Tuple[str, List[str], str]] = [
 ]
 
 
-def _matches_any_pattern(filepath: str, patterns: List[str]) -> bool:
-    """Check if filepath matches any of the given glob patterns."""
-    import fnmatch
+def _glob_match(filepath: str, pattern: str) -> bool:
+    """Match filepath against a glob pattern with ** support.
 
+    Handles:
+    - ** matches zero or more directory levels
+    - * matches any characters except /
+    - ? matches single character
+    """
+    import re
+
+    # Convert glob pattern to regex
+    regex_parts = []
+    i = 0
+    while i < len(pattern):
+        if pattern[i:i+2] == '**':
+            regex_parts.append('.*')  # Match anything including /
+            i += 2
+            if i < len(pattern) and pattern[i] == '/':
+                i += 1  # Skip trailing / after **
+        elif pattern[i] == '*':
+            regex_parts.append('[^/]*')  # Match anything except /
+            i += 1
+        elif pattern[i] == '?':
+            regex_parts.append('[^/]')
+            i += 1
+        elif pattern[i] in '.^$+{}[]|()\\':
+            regex_parts.append('\\' + pattern[i])
+            i += 1
+        else:
+            regex_parts.append(pattern[i])
+            i += 1
+
+    regex = '^' + ''.join(regex_parts) + '$'
+    return bool(re.match(regex, filepath))
+
+
+def _matches_any_pattern(filepath: str, patterns: List[str]) -> bool:
+    """Check if filepath matches any of the given glob patterns.
+
+    Pattern semantics:
+    - Patterns without '/' (e.g., '*.md') only match files at repo root.
+    - Patterns with '/' use _glob_match for proper ** support.
+    """
     for pattern in patterns:
-        if fnmatch.fnmatch(filepath, pattern):
-            return True
+        if '/' not in pattern:
+            # Repo-root pattern: only match files without directory separators
+            if '/' not in filepath and _glob_match(filepath, pattern):
+                return True
+        else:
+            # Path pattern: use glob matching with ** support
+            if _glob_match(filepath, pattern):
+                return True
     return False
 
 
