@@ -14,21 +14,58 @@ stable placeholders, ensuring deterministic output suitable for LLM workflows.
 # From repo root
 cd products/context-cleaner
 python -m ninobyte_context_cleaner --version
+
+# With PDF support (optional)
+pip install ninobyte-context-cleaner[pdf]
 ```
 
 ## Usage
 
+### Basic PII Redaction
+
 ```bash
-# Basic usage: pipe text through the redactor
+# Pipe text through the redactor
 echo "Contact john@example.com or call 555-123-4567" | python -m ninobyte_context_cleaner
 # Output: Contact [EMAIL_REDACTED] or call [PHONE_REDACTED]
 
 # Process a file
-cat document.txt | python -m ninobyte_context_cleaner > cleaned.txt
+python -m ninobyte_context_cleaner --input document.txt
 
-# Check version
-python -m ninobyte_context_cleaner --version
+# JSONL output for pipelines
+echo "test@example.com" | python -m ninobyte_context_cleaner --output-format jsonl
 ```
+
+### Table Normalization
+
+```bash
+# Convert tables to key:value format
+cat data.csv | python -m ninobyte_context_cleaner --normalize-tables
+```
+
+### PDF Text Extraction
+
+```bash
+# Extract text from PDF and redact PII
+python -m ninobyte_context_cleaner --input document.pdf
+
+# Force PDF mode for file without .pdf extension
+python -m ninobyte_context_cleaner --input data.bin --input-type pdf
+
+# Combined: PDF input with JSONL output
+python -m ninobyte_context_cleaner --input report.pdf --output-format jsonl
+```
+
+## CLI Options
+
+| Option | Description |
+|--------|-------------|
+| `--help` | Show help message and exit |
+| `--version` | Show version and exit |
+| `--input <path>` | Read from file instead of STDIN |
+| `--input-type <type>` | Input type: `auto` (default), `text`, `pdf` |
+| `--pdf-mode <mode>` | PDF extraction mode: `text-only` (default) |
+| `--normalize-tables` | Convert tables to key:value format |
+| `--output-format <fmt>` | Output format: `text` (default), `jsonl` |
 
 ## Supported PII Patterns
 
@@ -45,6 +82,45 @@ Conservative matching to avoid false positives:
 - Does NOT match short numeric sequences like years (e.g., "2025")
 - Does NOT match hex-like tokens (e.g., Git SHAs)
 
+## PDF Support
+
+PDF text extraction requires the optional `[pdf]` extra:
+
+```bash
+pip install ninobyte-context-cleaner[pdf]
+```
+
+Features:
+- Extracts embedded text from text-based PDFs
+- Automatically detects `.pdf` extension
+- Force PDF mode with `--input-type pdf`
+- Deterministic output (normalized newlines, trimmed whitespace)
+
+Limitations:
+- No OCR support (scanned PDFs produce minimal output)
+- Text-based PDFs only
+
+## Output Formats
+
+### Text (default)
+Plain text output, suitable for direct use.
+
+### JSONL
+JSON Lines format with metadata, useful for pipelines:
+
+```json
+{
+  "redacted": "Contact [EMAIL_REDACTED]",
+  "normalized": null,
+  "meta": {
+    "version": "0.1.0",
+    "source": "stdin",
+    "input_type": "text",
+    "normalize_tables": false
+  }
+}
+```
+
 ## Design Principles
 
 - **Deterministic**: Same input always produces same output
@@ -57,11 +133,12 @@ Conservative matching to avoid false positives:
 | Code | Meaning |
 |------|---------|
 | 0 | Success |
-| 2 | Invalid usage (unknown flags, unexpected args) |
+| 2 | Invalid usage (unknown flags, bad path, missing dependency) |
 
 ## Security Posture
 
 - No networking imports
 - No shell execution
 - No file system writes
-- Pure Python stdlib only
+- Path traversal protection (rejects `..` segments)
+- Pure Python stdlib for core (optional pypdf for PDF)

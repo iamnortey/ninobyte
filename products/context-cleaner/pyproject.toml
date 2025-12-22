@@ -1,0 +1,51 @@
+[project]
+name = "ninobyte-context-cleaner"
+version = "0.1.0"
+description = "Deterministic PII redaction and text normalization for LLM context preparation"
+readme = "README.md"
+requires-python = ">=3.9"
+license = "MIT"
+authors = [
+    { name = "Isaac Nortey" }
+]
+keywords = ["pii", "redaction", "llm", "context", "privacy"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Text Processing",
+    "Topic :: Security",
+]
+
+# No runtime dependencies for core functionality (pure stdlib)
+dependencies = []
+
+[project.optional-dependencies]
+# PDF text extraction support
+pdf = ["pypdf>=4.0.0"]
+
+# Development dependencies
+dev = [
+    "pytest>=7.0.0",
+]
+
+[project.scripts]
+context-cleaner = "ninobyte_context_cleaner.__main__:main"
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = "test_*.py"
