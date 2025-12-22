@@ -8,6 +8,7 @@ on:
 permissions:
   contents: write
 
+# Prevent overlapping runs for the same tag
 concurrency:
   group: release-${{ github.ref_name }}
   cancel-in-progress: false
@@ -48,21 +49,25 @@ jobs:
         run: |
           set -euo pipefail
           TAG="${{ steps.meta.outputs.tag }}"
-
+          
+          echo "🔨 Building skill pack..."
           python3 scripts/release/build_skill_pack.py \
             --skill-dir "${{ env.SKILL_DIR }}" \
             --name "${{ env.PACK_NAME }}" \
             --version "${TAG}" \
             --out-dir dist
-
+          
           ZIP_FILE="${{ env.PACK_NAME }}_${TAG}.zip"
           SHA_FILE="${{ env.PACK_NAME }}_${TAG}.zip.sha256"
-
+          
           echo "zip_file=${ZIP_FILE}" >> "$GITHUB_OUTPUT"
           echo "sha_file=${SHA_FILE}" >> "$GITHUB_OUTPUT"
-
+          
           SHA256="$(awk '{print $1}' "dist/${SHA_FILE}")"
           echo "sha256=${SHA256}" >> "$GITHUB_OUTPUT"
+          
+          echo "✅ Build complete: ${ZIP_FILE}"
+          echo "✅ SHA256: ${SHA256}"
 
       - name: Verify artifacts exist
         shell: bash
@@ -70,8 +75,11 @@ jobs:
           set -euo pipefail
           ZIP_PATH="dist/${{ steps.build.outputs.zip_file }}"
           SHA_PATH="dist/${{ steps.build.outputs.sha_file }}"
+          
           [[ -f "${ZIP_PATH}" ]] || { echo "❌ Missing ${ZIP_PATH}"; exit 1; }
           [[ -f "${SHA_PATH}" ]] || { echo "❌ Missing ${SHA_PATH}"; exit 1; }
+          
+          echo "✅ Artifacts present"
           ls -la dist/
 
       - name: Verify checksum
@@ -80,6 +88,7 @@ jobs:
         run: |
           set -euo pipefail
           sha256sum -c "${{ steps.build.outputs.sha_file }}"
+          echo "✅ Checksum verified"
 
       - name: Create release (if not exists)
         id: release
@@ -89,14 +98,17 @@ jobs:
         run: |
           set -euo pipefail
           TAG="${{ steps.meta.outputs.tag }}"
+          
           if gh release view "${TAG}" >/dev/null 2>&1; then
             echo "created=false" >> "$GITHUB_OUTPUT"
+            echo "✅ Release exists: ${TAG}"
           else
             gh release create "${TAG}" \
               --title "${TAG}" \
               --notes "Release ${TAG} - assets uploading..." \
               --verify-tag
             echo "created=true" >> "$GITHUB_OUTPUT"
+            echo "✅ Release created: ${TAG}"
           fi
 
       - name: Upload release assets
@@ -106,10 +118,13 @@ jobs:
         run: |
           set -euo pipefail
           TAG="${{ steps.meta.outputs.tag }}"
+          
           gh release upload "${TAG}" \
             "dist/${{ steps.build.outputs.zip_file }}" \
             "dist/${{ steps.build.outputs.sha_file }}" \
             --clobber
+          
+          echo "✅ Assets uploaded"
 
       - name: Update release notes
         env:
@@ -124,33 +139,34 @@ jobs:
           COMMIT="${{ github.sha }}"
           RUN_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
           BUILD_TIME="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
-
+          
           NOTES=$(cat <<EOF
-## Skill Pack: ${{ env.PACK_NAME }}
-
-### Assets
-- \`${ZIP_FILE}\`
-- \`${SHA_FILE}\`
-
-### Verification
-\`\`\`bash
-sha256sum -c ${SHA_FILE}
-\`\`\`
-
-### SHA256
-\`\`\`
-${SHA256}  ${ZIP_FILE}
-\`\`\`
-
-### Build Provenance
-- Tag: \`${TAG}\`
-- Commit: \`${COMMIT}\`
-- Workflow Run: ${RUN_URL}
-- Built (UTC): \`${BUILD_TIME}\`
-EOF
+          ## Skill Pack: ${{ env.PACK_NAME }}
+          
+          ### Assets
+          - \`${ZIP_FILE}\`
+          - \`${SHA_FILE}\`
+          
+          ### Verification
+          \`\`\`bash
+          sha256sum -c ${SHA_FILE}
+          \`\`\`
+          
+          ### SHA256
+          \`\`\`
+          ${SHA256}  ${ZIP_FILE}
+          \`\`\`
+          
+          ### Build Provenance
+          - Tag: \`${TAG}\`
+          - Commit: \`${COMMIT}\`
+          - Workflow Run: ${RUN_URL}
+          - Built (UTC): \`${BUILD_TIME}\`
+          EOF
           )
-
+          
           gh release edit "${TAG}" --notes "${NOTES}"
+          echo "✅ Release notes updated"
 
       - name: Print audit log
         shell: bash
@@ -158,11 +174,14 @@ EOF
           set -euo pipefail
           echo "============================================================"
           echo "📋 RELEASE AUDIT LOG"
+          echo "============================================================"
           echo "Tag:         ${{ steps.meta.outputs.tag }}"
           echo "Commit:      ${{ github.sha }}"
           echo "Pack:        ${{ env.PACK_NAME }}"
           echo "Zip:         ${{ steps.build.outputs.zip_file }}"
           echo "SHA256:      ${{ steps.build.outputs.sha256 }}"
+          echo "Runner:      ${{ runner.os }} / ${{ runner.arch }}"
+          echo "Workflow:    ${{ github.workflow }}"
           echo "Run URL:     ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
           echo "Timestamp:   $(date -u +"%Y-%m-%dT%H:%M:%SZ")"
           echo "Release New: ${{ steps.release.outputs.created }}"
