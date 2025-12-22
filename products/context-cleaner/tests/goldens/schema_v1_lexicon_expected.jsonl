@@ -1,0 +1,1 @@
+{"meta":{"schema_version":"1","version":"0.1.0","source":"stdin","input_type":"text","normalize_tables":false,"lexicon":{"enabled":true,"source":"file","path_basename":"test_lexicon.json","rules_count":3,"target":"input","mode":"replace"}},"normalized":null,"redacted":"Visit New York City and contact ACME Incorporated today!\n"}

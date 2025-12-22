@@ -14,6 +14,9 @@ Options:
     --input-type <type> Input type: auto (default), text, pdf
     --pdf-mode <mode>   PDF extraction mode: text-only (default)
     --output-format <fmt>  Output format: text (default) or jsonl
+    --lexicon <path>    Load lexicon substitutions from JSON file
+    --lexicon-mode <mode>  Lexicon mode: replace (default)
+    --lexicon-target <target>  Apply to: input, normalized, both (default: input)
 
 Exit Codes:
     0   Success
@@ -48,6 +51,12 @@ Options:
   --pdf-mode <mode>   PDF extraction mode: text-only (default)
                       text-only: extract embedded text (no OCR)
   --output-format <fmt>  Output format: text (default) or jsonl
+  --lexicon <path>    Load lexicon substitutions from local JSON file
+  --lexicon-mode <mode>  Lexicon mode: replace (default)
+  --lexicon-target <target>  Apply lexicon to: input, normalized, both
+                      input: apply to raw input stream (default)
+                      normalized: apply to normalized output only
+                      both: apply to both streams
 
 Output Formats:
   text    Plain text output (default)
@@ -56,8 +65,13 @@ Output Formats:
 
 Processing Order:
   1. PDF text extraction (if input is PDF)
-  2. PII redaction (always applied)
-  3. Table normalization (only if --normalize-tables is set)
+  2. Table normalization (only if --normalize-tables is set)
+  3. Lexicon injection (only if --lexicon is set)
+  4. PII redaction (always applied)
+
+Lexicon Format:
+  JSON object mapping "from" strings to "to" strings:
+  {"Acme Inc": "ACME Incorporated", "NYC": "New York City"}
 
 Examples:
   # Basic PII redaction from STDIN
@@ -69,8 +83,8 @@ Examples:
   # Extract text from PDF and redact PII
   python -m ninobyte_context_cleaner --input document.pdf
 
-  # Force PDF mode for file without .pdf extension
-  python -m ninobyte_context_cleaner --input data.bin --input-type pdf
+  # Apply lexicon substitutions before PII redaction
+  python -m ninobyte_context_cleaner --lexicon mappings.json --input doc.txt
 
   # JSONL output for pipelines
   echo "test@example.com" | python -m ninobyte_context_cleaner --output-format jsonl
@@ -87,7 +101,10 @@ PDF Support:
 KNOWN_FLAGS = {"--help", "--version", "--normalize-tables"}
 
 # Known options (with arguments)
-KNOWN_OPTIONS = {"--input", "--input-type", "--pdf-mode", "--output-format"}
+KNOWN_OPTIONS = {
+    "--input", "--input-type", "--pdf-mode", "--output-format",
+    "--lexicon", "--lexicon-mode", "--lexicon-target"
+}
 
 # Valid output formats
 VALID_OUTPUT_FORMATS = {"text", "jsonl"}
@@ -97,6 +114,12 @@ VALID_INPUT_TYPES = {"auto", "text", "pdf"}
 
 # Valid PDF modes
 VALID_PDF_MODES = {"text-only"}
+
+# Valid lexicon modes
+VALID_LEXICON_MODES = {"replace"}
+
+# Valid lexicon targets
+VALID_LEXICON_TARGETS = {"input", "normalized", "both"}
 
 
 def is_safe_path(path: str) -> Tuple[bool, str]:
@@ -164,6 +187,9 @@ def parse_args(args: List[str]) -> Tuple[dict, Optional[str]]:
         "input_type": "auto",
         "pdf_mode": "text-only",
         "output_format": "text",
+        "lexicon_path": None,
+        "lexicon_mode": "replace",
+        "lexicon_target": "input",
     }
 
     i = 0
@@ -197,6 +223,16 @@ def parse_args(args: List[str]) -> Tuple[dict, Optional[str]]:
                 if value not in VALID_OUTPUT_FORMATS:
                     return {}, f"Invalid output format '{value}'. Use: text, jsonl"
                 options["output_format"] = value
+            elif arg == "--lexicon":
+                options["lexicon_path"] = value
+            elif arg == "--lexicon-mode":
+                if value not in VALID_LEXICON_MODES:
+                    return {}, f"Invalid lexicon mode '{value}'. Use: replace"
+                options["lexicon_mode"] = value
+            elif arg == "--lexicon-target":
+                if value not in VALID_LEXICON_TARGETS:
+                    return {}, f"Invalid lexicon target '{value}'. Use: input, normalized, both"
+                options["lexicon_target"] = value
 
             i += 2
             continue
@@ -215,7 +251,8 @@ def format_jsonl_output(
     normalized: Optional[str],
     normalize_tables: bool,
     source: str,
-    input_type: str
+    input_type: str,
+    lexicon_meta: Optional[str] = None
 ) -> str:
     """
     Format output as JSONL (single line JSON) following Schema v1 contract.
@@ -232,6 +269,7 @@ def format_jsonl_output(
     - "source": "stdin" | "file" | "pdf"
     - "input_type": "text" | "pdf"
     - "normalize_tables": true | false
+    - "lexicon": {...} (optional, only when lexicon is used)
 
     Returns:
         Single-line JSON string with deterministic key ordering
@@ -247,6 +285,11 @@ def format_jsonl_output(
         f'"input_type":{json.dumps(input_type, ensure_ascii=False)}',
         f'"normalize_tables":{json.dumps(normalize_tables)}',
     ]
+
+    # Add lexicon metadata if provided (additive schema)
+    if lexicon_meta:
+        meta_parts.append(f'"lexicon":{lexicon_meta}')
+
     meta_json = "{" + ",".join(meta_parts) + "}"
 
     # Normalized field: explicit null or string
@@ -293,6 +336,13 @@ def main() -> int:
     """
     Main CLI entrypoint.
 
+    Pipeline Order (authoritative):
+    1. Read input (STDIN, file, or PDF)
+    2. Table normalization (if --normalize-tables)
+    3. Lexicon injection (if --lexicon)
+    4. PII redaction (always)
+    5. Output formatting
+
     Returns:
         Exit code: 0 on success, 2 on invalid usage
     """
@@ -318,6 +368,9 @@ def main() -> int:
     input_path = options["input_path"]
     input_type_option = options["input_type"]
     output_format = options["output_format"]
+    lexicon_path = options["lexicon_path"]
+    lexicon_mode = options["lexicon_mode"]
+    lexicon_target = options["lexicon_target"]
 
     # Validate: --input-type pdf requires --input
     if input_type_option == "pdf" and not input_path:
@@ -330,6 +383,36 @@ def main() -> int:
         if not is_safe:
             print(f"Error: {path_error}", file=sys.stderr)
             return 2
+
+    # Validate lexicon path if provided (reuse path security)
+    lexicon_injector = None
+    lexicon_meta = None
+
+    if lexicon_path:
+        from ninobyte_context_cleaner.lexicon import (
+            is_safe_lexicon_path,
+            load_lexicon,
+            LexiconInjector,
+            create_lexicon_meta
+        )
+
+        is_safe, path_error = is_safe_lexicon_path(lexicon_path)
+        if not is_safe:
+            print(f"Error: {path_error}", file=sys.stderr)
+            return 2
+
+        lexicon, load_error = load_lexicon(lexicon_path)
+        if load_error:
+            print(f"Error: {load_error}", file=sys.stderr)
+            return 2
+
+        lexicon_injector = LexiconInjector(lexicon)
+        lexicon_meta = create_lexicon_meta(
+            path=lexicon_path,
+            rules_count=lexicon_injector.rules_count,
+            target=lexicon_target,
+            mode=lexicon_mode
+        )
 
     # Determine resolved input type
     if input_path:
@@ -350,7 +433,7 @@ def main() -> int:
     normalizer = TableNormalizer() if normalize_tables else None
 
     try:
-        # Read input based on type
+        # ===== STEP 1: Read input =====
         if resolved_input_type == "pdf":
             input_text, pdf_error = read_pdf_input(input_path)
             if pdf_error:
@@ -362,22 +445,36 @@ def main() -> int:
         else:
             input_text = sys.stdin.read()
 
-        # Step 1: PII redaction (always applied)
-        redacted_text = redactor.redact(input_text)
-
-        # Step 2: Table normalization (if flag set)
+        # ===== STEP 2: Table normalization (if enabled) =====
         normalized_text: Optional[str] = None
         if normalizer:
-            normalized_text = normalizer.normalize(redacted_text)
+            normalized_text = normalizer.normalize(input_text)
 
-        # Format output
+        # ===== STEP 3: Lexicon injection (if enabled) =====
+        # Apply to appropriate streams based on target
+        if lexicon_injector:
+            if lexicon_target in ("input", "both"):
+                input_text = lexicon_injector.apply(input_text)
+
+            if lexicon_target in ("normalized", "both") and normalized_text is not None:
+                normalized_text = lexicon_injector.apply(normalized_text)
+
+        # ===== STEP 4: PII redaction (always applied) =====
+        redacted_text = redactor.redact(input_text)
+
+        # Also redact normalized text if it exists
+        if normalized_text is not None:
+            normalized_text = redactor.redact(normalized_text)
+
+        # ===== STEP 5: Format output =====
         if output_format == "jsonl":
             output = format_jsonl_output(
                 redacted=redacted_text,
                 normalized=normalized_text,
                 normalize_tables=normalize_tables,
                 source=source,
-                input_type=resolved_input_type
+                input_type=resolved_input_type,
+                lexicon_meta=lexicon_meta
             )
             print(output)
         else:

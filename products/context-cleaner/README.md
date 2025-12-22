@@ -55,6 +55,30 @@ python -m ninobyte_context_cleaner --input data.bin --input-type pdf
 python -m ninobyte_context_cleaner --input report.pdf --output-format jsonl
 ```
 
+### Lexicon Injection
+
+Apply custom text substitutions before PII redaction:
+
+```bash
+# Create a lexicon file (JSON)
+cat > lexicon.json << 'EOF'
+{
+    "NYC": "New York City",
+    "Acme Inc": "ACME Incorporated"
+}
+EOF
+
+# Apply lexicon substitutions
+echo "Visit NYC and contact Acme Inc" | python -m ninobyte_context_cleaner --lexicon lexicon.json
+# Output: Visit New York City and contact ACME Incorporated
+
+# Lexicon with JSONL output (includes lexicon metadata)
+echo "Visit NYC" | python -m ninobyte_context_cleaner --lexicon lexicon.json --output-format jsonl
+
+# Apply lexicon only to normalized stream (with table normalization)
+cat data.csv | python -m ninobyte_context_cleaner --normalize-tables --lexicon lexicon.json --lexicon-target normalized
+```
+
 ## CLI Options
 
 | Option | Description |
@@ -66,6 +90,9 @@ python -m ninobyte_context_cleaner --input report.pdf --output-format jsonl
 | `--pdf-mode <mode>` | PDF extraction mode: `text-only` (default) |
 | `--normalize-tables` | Convert tables to key:value format |
 | `--output-format <fmt>` | Output format: `text` (default), `jsonl` |
+| `--lexicon <path>` | Load lexicon substitutions from JSON file |
+| `--lexicon-mode <mode>` | Lexicon mode: `replace` (default) |
+| `--lexicon-target <target>` | Apply to: `input` (default), `normalized`, `both` |
 
 ## Supported PII Patterns
 
@@ -128,6 +155,15 @@ Top-level keys appear in this exact order:
 3. `source` - Input source: `"stdin"`, `"file"`, or `"pdf"`
 4. `input_type` - Input type: `"text"` or `"pdf"`
 5. `normalize_tables` - Boolean flag state
+6. `lexicon` - (optional) Lexicon metadata object, only present when `--lexicon` used
+
+**Lexicon metadata keys (when present):**
+1. `enabled` - Always `true`
+2. `source` - Always `"file"`
+3. `path_basename` - Filename (no directory path for security)
+4. `rules_count` - Number of substitution rules
+5. `target` - Target stream: `"input"`, `"normalized"`, or `"both"`
+6. `mode` - Replacement mode: `"replace"`
 
 **Field Presence Rules:**
 - `normalized`: Always present. Value is `null` if `--normalize-tables` not set, otherwise contains normalized string.
@@ -143,7 +179,48 @@ $ echo "test@example.com" | python -m ninobyte_context_cleaner --output-format j
 **Schema Stability:**
 - Schema v1 is **additive-only**: Future versions may add new keys to `meta` or top-level without breaking v1 consumers.
 - Breaking changes (field renames, type changes) will increment `schema_version` to `"2"`.
-- Lexicon injection (custom redaction tokens) is planned for Phase 2.3B.
+
+## Lexicon Injection
+
+Lexicon injection allows deterministic text substitution before PII redaction. This is useful for:
+- Normalizing company names, abbreviations, or acronyms
+- Expanding shorthand before context preparation
+- Ensuring consistent terminology in LLM prompts
+
+### Lexicon Format
+
+Lexicons are JSON files mapping "from" strings to "to" strings:
+
+```json
+{
+    "NYC": "New York City",
+    "Acme Inc": "ACME Incorporated",
+    "API": "Application Programming Interface"
+}
+```
+
+### Replacement Rules
+
+1. **Longer keys first**: Keys are applied in descending length order (then lexicographic for ties)
+2. **Case-sensitive**: Matching is exact (case-sensitive)
+3. **Reserved token protection**: Existing placeholders like `[EMAIL_REDACTED]` are never modified
+4. **Deterministic**: Same input + lexicon always produces identical output
+
+### Lexicon Target
+
+The `--lexicon-target` flag controls which stream receives substitutions:
+
+| Target | Description |
+|--------|-------------|
+| `input` | Apply to raw input before normalization (default) |
+| `normalized` | Apply only to normalized output |
+| `both` | Apply to both streams |
+
+### Pipeline Order
+
+```
+input read → table normalize → lexicon injection → PII redaction → output
+```
 
 ## Design Principles
 
