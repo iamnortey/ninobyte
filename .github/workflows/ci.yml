@@ -218,8 +218,8 @@ jobs:
             fi
           done
 
-  context-cleaner-smoke:
-    name: ContextCleaner Smoke Harness
+  context-cleaner-core:
+    name: ContextCleaner Core Tests
     runs-on: ubuntu-latest
 
     steps:
@@ -238,7 +238,33 @@ jobs:
           echo ""
           PYTHONPATH=products/context-cleaner/src python products/context-cleaner/scripts/smoke_context_cleaner.py
 
-      - name: Run pytest (excluding PDF tests - requires optional extras)
+      - name: Run pytest (PDF tests will skip - no extras installed)
         run: |
           pip install pytest
-          PYTHONPATH=products/context-cleaner/src python -m pytest products/context-cleaner/tests -v --ignore=products/context-cleaner/tests/test_pdf_extraction.py
+          PYTHONPATH=products/context-cleaner/src python -m pytest products/context-cleaner/tests -v
+
+  context-cleaner-pdf:
+    name: ContextCleaner PDF Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install package with PDF extras
+        run: |
+          pip install pytest
+          pip install -e "products/context-cleaner[pdf]"
+
+      - name: Run smoke harness (with PDF support)
+        run: |
+          python products/context-cleaner/scripts/smoke_context_cleaner.py
+
+      - name: Run pytest (PDF tests will execute)
+        run: |
+          python -m pytest products/context-cleaner/tests -v

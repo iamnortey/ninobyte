@@ -8,6 +8,10 @@ Validates:
 - Missing dependency error handling
 - Path traversal security for PDF files
 - JSONL output with PDF metadata
+
+NOTE: Tests requiring pypdf will SKIP (not fail) if pypdf is not installed.
+This allows core CI to run without optional extras.
+The "ContextCleaner PDF Tests" CI job installs [pdf] extras to run these tests.
 """
 
 import json
@@ -15,6 +19,12 @@ import subprocess
 import sys
 import unittest.mock
 from pathlib import Path
+
+import pytest
+
+# Skip entire module if pypdf is not available
+# This allows core CI (without extras) to safely skip PDF tests
+pypdf = pytest.importorskip("pypdf", reason="pypdf required for PDF tests")
 
 # Test directories
 TESTS_DIR = Path(__file__).parent
