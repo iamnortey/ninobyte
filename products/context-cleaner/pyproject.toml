@@ -37,6 +37,9 @@ dev = [
 ]
 
 [project.scripts]
+# Primary entrypoint (namespaced)
+ninobyte-context-cleaner = "ninobyte_context_cleaner.__main__:main"
+# Legacy alias for backwards compatibility
 context-cleaner = "ninobyte_context_cleaner.__main__:main"
 
 [build-system]
