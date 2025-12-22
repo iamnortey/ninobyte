@@ -325,3 +325,78 @@ jobs:
       - name: Run contract snapshot check
         run: |
           python products/context-cleaner/scripts/contract_snapshot_check.py
+
+  context-cleaner-wheel-audit:
+    name: ContextCleaner Wheel Audit
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Build sdist and wheel
+        run: |
+          pip install build
+          python -m build products/context-cleaner
+
+      - name: Inspect wheel contents
+        run: |
+          echo "Inspecting wheel contents..."
+          WHEEL=$(ls products/context-cleaner/dist/*.whl)
+          echo "Wheel: $WHEEL"
+          echo ""
+
+          # List all files in wheel
+          python -m zipfile -l "$WHEEL"
+          echo ""
+
+          # Verify required modules exist
+          echo "Verifying required modules..."
+          required_modules=(
+            "ninobyte_context_cleaner/__main__.py"
+            "ninobyte_context_cleaner/version.py"
+            "ninobyte_context_cleaner/redactor.py"
+            "ninobyte_context_cleaner/lexicon.py"
+            "ninobyte_context_cleaner/table_normalizer.py"
+            "ninobyte_context_cleaner/pdf_extractor.py"
+          )
+
+          for module in "${required_modules[@]}"; do
+            if python -m zipfile -l "$WHEEL" | grep -q "$module"; then
+              echo "✅ Found: $module"
+            else
+              echo "❌ Missing: $module"
+              exit 1
+            fi
+          done
+
+          echo ""
+          echo "✅ All required modules present in wheel"
+
+      - name: Install from wheel
+        run: |
+          pip install products/context-cleaner/dist/*.whl
+
+      - name: Verify CLI entrypoint
+        run: |
+          ninobyte-context-cleaner --version
+          context-cleaner --version
+
+      - name: Run smoke harness
+        run: |
+          python products/context-cleaner/scripts/smoke_context_cleaner.py
+
+      - name: Run contract snapshot check
+        run: |
+          python products/context-cleaner/scripts/contract_snapshot_check.py
+
+      - name: Run JSONL consumer compatibility check
+        run: |
+          cat products/context-cleaner/tests/goldens/contract_snapshot_input.txt | \
+            ninobyte-context-cleaner --output-format jsonl | \
+            python products/context-cleaner/scripts/jsonl_consumer_check.py
