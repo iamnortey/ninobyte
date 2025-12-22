@@ -268,3 +268,60 @@ jobs:
       - name: Run pytest (PDF tests will execute)
         run: |
           python -m pytest products/context-cleaner/tests -v
+
+  context-cleaner-install-editable:
+    name: ContextCleaner Install (Editable)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install editable (pip install -e)
+        run: |
+          pip install -e "products/context-cleaner"
+
+      - name: Verify CLI entrypoint
+        run: |
+          ninobyte-context-cleaner --version
+          context-cleaner --version
+
+      - name: Run contract snapshot check
+        run: |
+          python products/context-cleaner/scripts/contract_snapshot_check.py
+
+  context-cleaner-install-wheel:
+    name: ContextCleaner Install (Wheel)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Build wheel
+        run: |
+          pip install build
+          cd products/context-cleaner && python -m build --wheel
+
+      - name: Install wheel
+        run: |
+          pip install products/context-cleaner/dist/*.whl
+
+      - name: Verify CLI entrypoint
+        run: |
+          ninobyte-context-cleaner --version
+          context-cleaner --version
+
+      - name: Run contract snapshot check
+        run: |
+          python products/context-cleaner/scripts/contract_snapshot_check.py
