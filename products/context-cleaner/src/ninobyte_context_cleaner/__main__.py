@@ -2,25 +2,17 @@
 CLI entrypoint for ninobyte-context-cleaner.
 
 Usage:
+    ninobyte-context-cleaner [OPTIONS]
     python -m ninobyte_context_cleaner [OPTIONS]
 
+Deterministic PII redaction and text normalization for LLM context preparation.
 Reads text from STDIN (or file), writes processed output to STDOUT.
-
-Options:
-    --help              Show this help message and exit
-    --version           Show version and exit
-    --normalize-tables  Convert table-like content to key:value format
-    --input <path>      Read from file instead of STDIN (read-only)
-    --input-type <type> Input type: auto (default), text, pdf
-    --pdf-mode <mode>   PDF extraction mode: text-only (default)
-    --output-format <fmt>  Output format: text (default) or jsonl
-    --lexicon <path>    Load lexicon substitutions from JSON file
-    --lexicon-mode <mode>  Lexicon mode: replace (default)
-    --lexicon-target <target>  Apply to: input, normalized, both (default: input)
 
 Exit Codes:
     0   Success
-    2   Invalid usage (unknown flags, bad path, etc.)
+    2   Invalid usage (unknown flags, bad path, missing dependency)
+
+Run with --help for full usage information.
 """
 
 import json
@@ -34,7 +26,8 @@ from ninobyte_context_cleaner.version import __version__
 
 
 USAGE = """\
-Usage: python -m ninobyte_context_cleaner [OPTIONS]
+Usage: ninobyte-context-cleaner [OPTIONS]
+       python -m ninobyte_context_cleaner [OPTIONS]
 
 Deterministic PII redaction and text normalization for LLM context preparation.
 
@@ -75,22 +68,29 @@ Lexicon Format:
 
 Examples:
   # Basic PII redaction from STDIN
-  echo "Contact john@example.com" | python -m ninobyte_context_cleaner
+  echo "Contact john@example.com" | ninobyte-context-cleaner
 
   # Read from file
-  python -m ninobyte_context_cleaner --input document.txt
+  ninobyte-context-cleaner --input document.txt
+
+  # Table normalization (CSV/TSV/pipe tables to key:value)
+  cat data.csv | ninobyte-context-cleaner --normalize-tables
 
   # Extract text from PDF and redact PII
-  python -m ninobyte_context_cleaner --input document.pdf
+  ninobyte-context-cleaner --input document.pdf
 
   # Apply lexicon substitutions before PII redaction
-  python -m ninobyte_context_cleaner --lexicon mappings.json --input doc.txt
+  ninobyte-context-cleaner --lexicon mappings.json --input doc.txt
 
   # JSONL output for pipelines
-  echo "test@example.com" | python -m ninobyte_context_cleaner --output-format jsonl
+  echo "test@example.com" | ninobyte-context-cleaner --output-format jsonl
 
   # Combined: PDF input, table normalization, JSONL output
-  python -m ninobyte_context_cleaner --input data.pdf --normalize-tables --output-format jsonl
+  ninobyte-context-cleaner --input data.pdf --normalize-tables --output-format jsonl
+
+Exit Codes:
+  0   Success
+  2   Invalid usage (unknown flags, bad path, missing dependency)
 
 PDF Support:
   Requires optional dependency: pip install ninobyte-context-cleaner[pdf]
