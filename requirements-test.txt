@@ -1,0 +1,4 @@
+# Pinned test dependencies for CI repo-root pytest gate
+# Keep minimal: only what's needed to run `python -m pytest -q` at repo root
+# Last updated: 2025-12-22
+pytest==8.3.5
