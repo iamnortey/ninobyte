@@ -1,0 +1,7 @@
+Server logs:
+
+Host	Status	Admin
+server1	running	admin@server1.local
+server2	stopped	admin@server2.local
+
+End of log.

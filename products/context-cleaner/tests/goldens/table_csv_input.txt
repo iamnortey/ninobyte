@@ -1,0 +1,8 @@
+User data export:
+
+Name,Department,Contact
+John Smith,Engineering,john@company.com
+Jane Doe,Marketing,jane@company.com
+Bob Wilson,Sales,bob@company.com
+
+Report complete.

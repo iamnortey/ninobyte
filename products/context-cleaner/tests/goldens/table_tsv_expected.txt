@@ -1,0 +1,6 @@
+Server logs:
+
+Row 1: Host=server1, Status=running, Admin=[EMAIL_REDACTED]
+Row 2: Host=server2, Status=stopped, Admin=[EMAIL_REDACTED]
+
+End of log.

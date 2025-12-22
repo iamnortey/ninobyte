@@ -1,0 +1,6 @@
+Here is a data table:
+
+Row 1: Name=Alice, Email=[EMAIL_REDACTED], Phone=[PHONE_REDACTED]
+Row 2: Name=Bob, Email=[EMAIL_REDACTED], Phone=[PHONE_REDACTED]
+
+End of table.
