@@ -51,8 +51,8 @@ Options:
 
 Output Formats:
   text    Plain text output (default)
-  jsonl   JSON Lines with metadata:
-          {"redacted":"...","normalized":"..."|null,"meta":{...}}
+  jsonl   JSON Lines (Schema v1) with deterministic key ordering:
+          {"meta":{...},"normalized":"..."|null,"redacted":"..."}
 
 Processing Order:
   1. PDF text extraction (if input is PDF)
@@ -218,35 +218,45 @@ def format_jsonl_output(
     input_type: str
 ) -> str:
     """
-    Format output as JSONL (single line JSON).
+    Format output as JSONL (single line JSON) following Schema v1 contract.
 
-    Schema:
-    {
-        "redacted": "...",
-        "normalized": "..." | null,
-        "meta": {
-            "version": "0.1.0",
-            "normalize_tables": true/false,
-            "source": "stdin" | "file" | "pdf",
-            "input_type": "text" | "pdf"
-        }
-    }
+    Schema v1 Contract:
+    - Top-level key order: "meta", "normalized", "redacted"
+    - "normalized" is always present (null if normalization not requested)
+    - "redacted" is always a string
+    - Schema is additive: future keys may be added without breaking v1 consumers
 
-    Field order is deterministic (sorted keys).
+    meta object contains (in this order):
+    - "schema_version": "1" (hardcoded, identifies contract version)
+    - "version": tool version string
+    - "source": "stdin" | "file" | "pdf"
+    - "input_type": "text" | "pdf"
+    - "normalize_tables": true | false
+
+    Returns:
+        Single-line JSON string with deterministic key ordering
     """
-    output = {
-        "meta": {
-            "input_type": input_type,
-            "normalize_tables": normalize_tables,
-            "source": source,
-            "version": __version__,
-        },
-        "normalized": normalized,
-        "redacted": redacted,
-    }
+    # Build JSON string manually to guarantee key order
+    # This ensures stable output for downstream pipelines
 
-    # Use sort_keys for deterministic output
-    return json.dumps(output, ensure_ascii=False, sort_keys=True)
+    # Meta object with explicit key order
+    meta_parts = [
+        f'"schema_version":"1"',
+        f'"version":{json.dumps(__version__, ensure_ascii=False)}',
+        f'"source":{json.dumps(source, ensure_ascii=False)}',
+        f'"input_type":{json.dumps(input_type, ensure_ascii=False)}',
+        f'"normalize_tables":{json.dumps(normalize_tables)}',
+    ]
+    meta_json = "{" + ",".join(meta_parts) + "}"
+
+    # Normalized field: explicit null or string
+    normalized_json = "null" if normalized is None else json.dumps(normalized, ensure_ascii=False)
+
+    # Redacted field: always a string
+    redacted_json = json.dumps(redacted, ensure_ascii=False)
+
+    # Top-level object with explicit key order: meta, normalized, redacted
+    return f'{{"meta":{meta_json},"normalized":{normalized_json},"redacted":{redacted_json}}}'
 
 
 def read_pdf_input(path: str) -> Tuple[str, Optional[str]]:
