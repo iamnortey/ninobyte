@@ -1,5 +1,13 @@
 name: CI
 
+# ============================================================================
+# Governance Reference:
+# This workflow enforces PROJECT_INSTRUCTIONS.md + VALIDATION_LOG.md decisions:
+#   - "stdlib-only AirGap" — AirGap tests run in isolated venv with pytest only
+#   - "schema v1 contract immutability" — ContextCleaner JSONL output is pinned
+#   - "golden snapshot is a gate, not an auto-update" — CI fails on diff, never writes
+# ============================================================================
+
 on:
   push:
     branches: [main]
@@ -400,3 +408,120 @@ jobs:
           cat products/context-cleaner/tests/goldens/contract_snapshot_input.txt | \
             ninobyte-context-cleaner --output-format jsonl | \
             python products/context-cleaner/scripts/jsonl_consumer_check.py
+
+  # ==========================================================================
+  # AirGap Isolated Tests (Stdlib-Only Proof)
+  # ==========================================================================
+  # This job proves AirGap does not require third-party runtime dependencies.
+  # It creates a fresh venv with ONLY pytest installed, then runs AirGap tests
+  # using PYTHONPATH to reference monorepo sources directly.
+  # ==========================================================================
+  airgap-isolated-tests:
+    name: AirGap Tests (Isolated Stdlib)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Create isolated venv with pytest only
+        run: |
+          echo "Creating isolated venv to prove AirGap is stdlib-only..."
+          python -m venv .venv_airgap
+          source .venv_airgap/bin/activate
+          pip install -U pip
+          pip install pytest
+          echo ""
+          echo "Installed packages (should only show pytest + deps):"
+          pip list
+          deactivate
+
+      - name: Run AirGap tests in isolated environment
+        run: |
+          source .venv_airgap/bin/activate
+          echo "Running AirGap tests with PYTHONPATH pointing to monorepo sources..."
+          echo "If this fails due to missing imports, AirGap has third-party deps."
+          echo ""
+          PYTHONPATH=products/mcp-servers/ninobyte-airgap/src:products/context-cleaner/src \
+            python -m pytest products/mcp-servers/ninobyte-airgap/tests -v
+          deactivate
+
+      - name: Verify no network/shell imports in AirGap adapter
+        run: |
+          echo "Verifying AirGap adapter security posture..."
+          adapter="products/mcp-servers/ninobyte-airgap/src/context_cleaner_adapter.py"
+
+          if grep -q "import subprocess" "$adapter"; then
+            echo "❌ FAIL: subprocess import found in adapter"
+            exit 1
+          fi
+          echo "✅ No subprocess imports"
+
+          if grep -q "import socket" "$adapter"; then
+            echo "❌ FAIL: socket import found in adapter"
+            exit 1
+          fi
+          echo "✅ No socket imports"
+
+          if grep -q "os.system" "$adapter"; then
+            echo "❌ FAIL: os.system found in adapter"
+            exit 1
+          fi
+          echo "✅ No os.system calls"
+
+          echo ""
+          echo "✅ AirGap adapter security posture verified"
+
+  # ==========================================================================
+  # ContextCleaner Contract Gates
+  # ==========================================================================
+  # This job enforces Schema v1 immutability. The golden snapshot is a gate,
+  # not an auto-update target. Any drift fails CI immediately.
+  # ==========================================================================
+  context-cleaner-contract-gates:
+    name: ContextCleaner Contract Gates
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Run smoke harness (schema v1 contract)
+        run: |
+          echo "Running smoke harness for schema v1 contract validation..."
+          PYTHONPATH=products/context-cleaner/src \
+            python products/context-cleaner/scripts/smoke_context_cleaner.py
+
+      - name: Run contract snapshot check (MUST match exactly)
+        run: |
+          echo "Running contract snapshot check..."
+          echo "This gate fails on any diff. CI never updates the golden."
+          echo ""
+          PYTHONPATH=products/context-cleaner/src \
+            python products/context-cleaner/scripts/contract_snapshot_check.py
+
+      - name: Run JSONL consumer compatibility check
+        run: |
+          echo "Validating JSONL output against consumer contract..."
+          PYTHONPATH=products/context-cleaner/src \
+            python products/context-cleaner/scripts/jsonl_consumer_check.py \
+            < products/context-cleaner/tests/goldens/contract_snapshot_expected.jsonl
+
+      - name: Verify reserved token protection exists
+        run: |
+          echo "Verifying reserved token protection pattern..."
+          if ! grep -qE '\[A-Z0-9_\]' products/context-cleaner/src/ninobyte_context_cleaner/lexicon.py; then
+            echo "❌ FAIL: Reserved token pattern not found"
+            exit 1
+          fi
+          echo "✅ Reserved token protection pattern present"
