@@ -1,0 +1,3 @@
+Hello, my email is [EMAIL_REDACTED] and you can reach me at [PHONE_REDACTED].
+For urgent matters, call [PHONE_REDACTED] or text [PHONE_REDACTED].
+My SSN is not included because it's out of scope.
