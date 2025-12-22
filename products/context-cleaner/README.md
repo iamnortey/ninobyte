@@ -2,6 +2,27 @@
 
 Deterministic PII redaction for LLM context preparation.
 
+## Quick Start
+
+```bash
+# Install
+pip install ninobyte-context-cleaner
+
+# Basic usage: redact PII from text
+echo "Contact john@example.com" | ninobyte-context-cleaner
+# Output: Contact [EMAIL_REDACTED]
+
+# From file
+ninobyte-context-cleaner --input document.txt
+
+# JSONL output for pipelines
+echo "test@example.com" | ninobyte-context-cleaner --output-format jsonl
+
+# With PDF support
+pip install ninobyte-context-cleaner[pdf]
+ninobyte-context-cleaner --input document.pdf
+```
+
 ## Overview
 
 ContextCleaner provides a Unix-style CLI tool that reads text from STDIN and writes
@@ -11,13 +32,24 @@ stable placeholders, ensuring deterministic output suitable for LLM workflows.
 ## Installation
 
 ```bash
-# From repo root
+# Install from PyPI (when published)
+pip install ninobyte-context-cleaner
+
+# Or run directly from source
 cd products/context-cleaner
-python -m ninobyte_context_cleaner --version
+pip install -e .
+
+# Verify installation
+ninobyte-context-cleaner --version
 
 # With PDF support (optional)
 pip install ninobyte-context-cleaner[pdf]
 ```
+
+**Available commands:**
+- `ninobyte-context-cleaner` - Primary entrypoint (recommended)
+- `context-cleaner` - Legacy alias
+- `python -m ninobyte_context_cleaner` - Module invocation
 
 ## Usage
 
@@ -179,6 +211,42 @@ $ echo "test@example.com" | python -m ninobyte_context_cleaner --output-format j
 **Schema Stability:**
 - Schema v1 is **additive-only**: Future versions may add new keys to `meta` or top-level without breaking v1 consumers.
 - Breaking changes (field renames, type changes) will increment `schema_version` to `"2"`.
+
+## Contract Stability
+
+ContextCleaner maintains strict contract guarantees for downstream consumers:
+
+### JSONL Schema v1 Contract
+
+| Guarantee | Description |
+|-----------|-------------|
+| Key ordering | Top-level: `meta` → `normalized` → `redacted` (guaranteed stable) |
+| Schema version | `meta.schema_version` is always `"1"` (string, not integer) |
+| Field presence | `normalized` always present (null if not produced) |
+| Additive-only | New meta keys may be added; existing keys never removed/renamed |
+
+### Reserved Token Protection
+
+Redaction placeholders follow the pattern `[UPPER_CASE_TOKEN]` and are protected:
+- Pattern: `[A-Z0-9_]+` within square brackets
+- Examples: `[EMAIL_REDACTED]`, `[PHONE_REDACTED]`
+- Lexicon injection never modifies existing placeholders
+
+### Path Security
+
+All file paths are validated:
+- Path traversal blocked (rejects `..` segments after normalization)
+- Applies to `--input` and `--lexicon` paths
+- Canonicalization enforced before access
+
+### Processing Pipeline
+
+The authoritative processing order is fixed:
+```
+input read → table normalize → lexicon inject → PII redact → output
+```
+
+This order is guaranteed and will not change without a major version bump.
 
 ## Lexicon Injection
 
