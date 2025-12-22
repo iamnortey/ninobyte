@@ -217,3 +217,28 @@ jobs:
               echo "✅ .gitignore includes: $pattern"
             fi
           done
+
+  context-cleaner-smoke:
+    name: ContextCleaner Smoke Harness
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Run smoke harness
+        run: |
+          echo "Running ContextCleaner deterministic smoke harness..."
+          echo "This validates JSONL schema v1 contract compliance."
+          echo ""
+          PYTHONPATH=products/context-cleaner/src python products/context-cleaner/scripts/smoke_context_cleaner.py
+
+      - name: Run pytest (excluding PDF tests - requires optional extras)
+        run: |
+          pip install pytest
+          PYTHONPATH=products/context-cleaner/src python -m pytest products/context-cleaner/tests -v --ignore=products/context-cleaner/tests/test_pdf_extraction.py
