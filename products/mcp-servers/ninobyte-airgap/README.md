@@ -28,6 +28,32 @@ A security-hardened, local-only MCP server for browsing and searching files with
 | `search_text` | Search text in files using ripgrep (preferred) or Python fallback |
 | `redact_preview` | Stateless string redaction (no file I/O) |
 
+## ContextCleaner Consumer Contract
+
+AirGap integrates with `ninobyte-context-cleaner` as a library consumer for PII redaction.
+
+**Integration Guarantees:**
+
+- **In-process execution**: ContextCleaner runs in-process via argv injection + stream capture (no subprocess)
+- **Schema v1 stable**: JSONL output preserves key order (`meta` → `normalized` → `redacted`) and `schema_version: "1"`
+- **Deterministic**: Same input produces identical output across runs
+- **Consumer gates enforced**: Integration tests validate contract compliance
+
+**Usage:**
+
+```python
+from context_cleaner_adapter import clean_context_text
+
+output = clean_context_text(
+    "Contact jane@example.com for info",
+    output_format="jsonl",
+    allowed_roots=["/safe/path"]  # AirGap path security for lexicon
+)
+# Returns: {"meta":{...},"normalized":null,"redacted":"Contact [EMAIL_REDACTED] for info"}
+```
+
+**Path Security**: When `lexicon_path` is provided with `allowed_roots`, AirGap path security validates the lexicon path before passing to ContextCleaner.
+
 ## Configuration
 
 ```json
