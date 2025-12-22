@@ -1,0 +1,8 @@
+Here is a data table:
+
+| Name | Email | Phone |
+|------|-------|-------|
+| Alice | alice@example.com | 555-123-4567 |
+| Bob | bob@example.org | 555-987-6543 |
+
+End of table.

@@ -1,0 +1,7 @@
+User data export:
+
+Row 1: Name=John Smith, Department=Engineering, Contact=[EMAIL_REDACTED]
+Row 2: Name=Jane Doe, Department=Marketing, Contact=[EMAIL_REDACTED]
+Row 3: Name=Bob Wilson, Department=Sales, Contact=[EMAIL_REDACTED]
+
+Report complete.

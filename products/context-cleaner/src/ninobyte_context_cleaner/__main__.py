@@ -4,11 +4,12 @@ CLI entrypoint for ninobyte-context-cleaner.
 Usage:
     python -m ninobyte_context_cleaner [OPTIONS]
 
-Reads text from STDIN, writes redacted output to STDOUT.
+Reads text from STDIN, writes processed output to STDOUT.
 
 Options:
-    --help      Show this help message and exit
-    --version   Show version and exit
+    --help              Show this help message and exit
+    --version           Show version and exit
+    --normalize-tables  Convert table-like content to key:value format
 
 Exit Codes:
     0   Success
@@ -18,24 +19,41 @@ Exit Codes:
 import sys
 
 from ninobyte_context_cleaner.redactor import PIIRedactor
+from ninobyte_context_cleaner.table_normalizer import TableNormalizer
 from ninobyte_context_cleaner.version import __version__
 
 
 USAGE = """\
 Usage: python -m ninobyte_context_cleaner [OPTIONS]
 
-Deterministic PII redaction for LLM context preparation.
+Deterministic PII redaction and text normalization for LLM context preparation.
 
-Reads text from STDIN, writes redacted output to STDOUT.
+Reads text from STDIN, writes processed output to STDOUT.
 
 Options:
-  --help      Show this help message and exit
-  --version   Show version and exit
+  --help              Show this help message and exit
+  --version           Show version and exit
+  --normalize-tables  Convert table-like content to key:value format
+                      (pipe tables, CSV, TSV)
+
+Processing Order:
+  1. PII redaction (always applied)
+  2. Table normalization (only if --normalize-tables is set)
 
 Examples:
+  # Basic PII redaction
   echo "Contact john@example.com" | python -m ninobyte_context_cleaner
-  cat document.txt | python -m ninobyte_context_cleaner > cleaned.txt
+
+  # With table normalization
+  echo "| Name | Email |
+  | John | john@example.com |" | python -m ninobyte_context_cleaner --normalize-tables
+
+  # Process a file with all transforms
+  cat document.txt | python -m ninobyte_context_cleaner --normalize-tables > cleaned.txt
 """
+
+# Known flags that we accept
+KNOWN_FLAGS = {"--help", "--version", "--normalize-tables"}
 
 
 def main() -> int:
@@ -47,7 +65,7 @@ def main() -> int:
     """
     args = sys.argv[1:]
 
-    # Handle flags
+    # Handle info flags first
     if "--help" in args:
         print(USAGE)
         return 0
@@ -56,23 +74,35 @@ def main() -> int:
         print(f"ninobyte-context-cleaner {__version__}")
         return 0
 
+    # Parse flags
+    normalize_tables = "--normalize-tables" in args
+
     # Check for unknown flags or unexpected arguments
     for arg in args:
         if arg.startswith("-"):
-            print(f"Error: Unknown option '{arg}'", file=sys.stderr)
-            print("Use --help for usage information.", file=sys.stderr)
-            return 2
+            if arg not in KNOWN_FLAGS:
+                print(f"Error: Unknown option '{arg}'", file=sys.stderr)
+                print("Use --help for usage information.", file=sys.stderr)
+                return 2
         else:
             print(f"Error: Unexpected argument '{arg}'", file=sys.stderr)
             print("Use --help for usage information.", file=sys.stderr)
             return 2
 
-    # Read from stdin, redact, write to stdout
+    # Initialize processors
     redactor = PIIRedactor()
+    normalizer = TableNormalizer() if normalize_tables else None
 
     try:
         input_text = sys.stdin.read()
+
+        # Step 1: PII redaction (always applied)
         output_text = redactor.redact(input_text)
+
+        # Step 2: Table normalization (if flag set)
+        if normalizer:
+            output_text = normalizer.normalize(output_text)
+
         sys.stdout.write(output_text)
         return 0
     except KeyboardInterrupt:
