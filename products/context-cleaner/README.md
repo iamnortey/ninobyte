@@ -2,6 +2,57 @@
 
 Deterministic PII redaction for LLM context preparation.
 
+## Install & Run Matrix
+
+### Installation Methods
+
+| Method | Command |
+|--------|---------|
+| pip install | `pip install ninobyte-context-cleaner` |
+| pipx install | `pipx install ninobyte-context-cleaner` |
+| With PDF support | `pip install ninobyte-context-cleaner[pdf]` |
+| Editable (dev) | `pip install -e products/context-cleaner` |
+
+### Console Scripts
+
+| Script | Description |
+|--------|-------------|
+| `ninobyte-context-cleaner` | Primary entrypoint (recommended) |
+| `context-cleaner` | Legacy alias |
+| `python -m ninobyte_context_cleaner` | Module invocation |
+
+### Trust Examples (Copy-Paste Ready)
+
+```bash
+# 1. stdin → jsonl (basic pipeline)
+echo "Contact john@example.com" | ninobyte-context-cleaner --output-format jsonl
+# Output: {"meta":{"schema_version":"1",...},"normalized":null,"redacted":"Contact [EMAIL_REDACTED]\n"}
+
+# 2. File input (text)
+ninobyte-context-cleaner --input document.txt
+
+# 3. PDF input (requires [pdf] extras)
+pip install ninobyte-context-cleaner[pdf]
+ninobyte-context-cleaner --input report.pdf --output-format jsonl
+
+# 4. Full pipeline: normalize-tables + lexicon
+cat data.csv | ninobyte-context-cleaner --normalize-tables --lexicon mappings.json --output-format jsonl
+
+# 5. Verify determinism (same input → same output)
+echo "test@example.com" | ninobyte-context-cleaner --output-format jsonl > out1.jsonl
+echo "test@example.com" | ninobyte-context-cleaner --output-format jsonl > out2.jsonl
+diff out1.jsonl out2.jsonl && echo "Deterministic: PASS"
+```
+
+### Exit Codes
+
+| Code | Meaning |
+|------|---------|
+| `0` | Success |
+| `2` | Invalid usage (unknown flags, bad path, missing dependency, path traversal) |
+
+---
+
 ## Quick Start
 
 ```bash
@@ -312,3 +363,54 @@ input read → table normalize → lexicon injection → PII redaction → outpu
 - No file system writes
 - Path traversal protection (rejects `..` segments)
 - Pure Python stdlib for core (optional pypdf for PDF)
+
+## Trust & Governance
+
+### Deterministic Output
+
+ContextCleaner guarantees deterministic output: **same input → same output**, always.
+This is enforced through:
+- Explicit key ordering in JSONL output (no reliance on dict ordering)
+- Lexicon replacement in length-descending, then lexicographic order
+- No timestamps, random IDs, or non-deterministic metadata in output
+
+### Schema v1 Contract Stability
+
+The JSONL Schema v1 contract is **non-negotiable**:
+- Top-level key order: `meta` → `normalized` → `redacted`
+- `schema_version` is always `"1"` (string, not integer)
+- `normalized` is always present (explicit `null` if not requested)
+- Contract is **additive-only**: new keys may be added, existing keys never removed
+
+Breaking changes will increment `schema_version` to `"2"`.
+
+### Tag Immutability
+
+Published releases are immutable:
+- Git tags are never force-pushed or deleted
+- PyPI versions are never yanked except for security issues
+- Consumers can pin versions with confidence
+
+### Security Boundaries
+
+The `src/` directory enforces strict security boundaries:
+- **No networking**: No imports from `urllib`, `http`, `socket`, `requests`, etc.
+- **No shell execution**: No `subprocess`, `os.system`, `os.popen`, etc.
+- **No file writes**: Read-only operations only (input files, lexicon files)
+- **Path traversal protection**: All file paths validated; `..` segments rejected after normalization
+
+### Smoke Harness
+
+A deterministic smoke harness validates contract compliance:
+```bash
+PYTHONPATH=products/context-cleaner/src python products/context-cleaner/scripts/smoke_context_cleaner.py
+```
+
+The smoke harness verifies:
+1. JSONL key ordering matches contract
+2. `normalized` is explicit `null` when `--normalize-tables` is off
+3. `normalized` becomes a string when `--normalize-tables` is on
+4. Lexicon metadata appears when `--lexicon` is used
+5. Reserved tokens (`[EMAIL_REDACTED]`, etc.) are protected from lexicon replacement
+6. Path traversal attempts exit with code 2
+7. PDF extras availability (skipped if not installed, not failed)
