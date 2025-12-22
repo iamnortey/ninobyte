@@ -105,21 +105,45 @@ Limitations:
 ### Text (default)
 Plain text output, suitable for direct use.
 
-### JSONL
-JSON Lines format with metadata, useful for pipelines:
+### JSONL Schema v1
+
+JSON Lines format with deterministic key ordering, suitable for ETL pipelines and downstream processing.
+
+**Schema Contract (v1):**
 
 ```json
-{
-  "redacted": "Contact [EMAIL_REDACTED]",
-  "normalized": null,
-  "meta": {
-    "version": "0.1.0",
-    "source": "stdin",
-    "input_type": "text",
-    "normalize_tables": false
-  }
-}
+{"meta":{...},"normalized":"..."|null,"redacted":"..."}
 ```
+
+**Key Order (guaranteed stable):**
+
+Top-level keys appear in this exact order:
+1. `meta` - Metadata object
+2. `normalized` - Normalized text (string or null)
+3. `redacted` - Redacted text (always string)
+
+**Meta object keys appear in this exact order:**
+1. `schema_version` - Always `"1"` (string)
+2. `version` - Tool version (e.g., `"0.1.0"`)
+3. `source` - Input source: `"stdin"`, `"file"`, or `"pdf"`
+4. `input_type` - Input type: `"text"` or `"pdf"`
+5. `normalize_tables` - Boolean flag state
+
+**Field Presence Rules:**
+- `normalized`: Always present. Value is `null` if `--normalize-tables` not set, otherwise contains normalized string.
+- `redacted`: Always present. Always a string (may include trailing newline).
+
+**Example output:**
+
+```bash
+$ echo "test@example.com" | python -m ninobyte_context_cleaner --output-format jsonl
+{"meta":{"schema_version":"1","version":"0.1.0","source":"stdin","input_type":"text","normalize_tables":false},"normalized":null,"redacted":"[EMAIL_REDACTED]\n"}
+```
+
+**Schema Stability:**
+- Schema v1 is **additive-only**: Future versions may add new keys to `meta` or top-level without breaking v1 consumers.
+- Breaking changes (field renames, type changes) will increment `schema_version` to `"2"`.
+- Lexicon injection (custom redaction tokens) is planned for Phase 2.3B.
 
 ## Design Principles
 
@@ -127,6 +151,7 @@ JSON Lines format with metadata, useful for pipelines:
 - **Unix-style**: STDIN → STDOUT, composable with other tools
 - **Read-only**: No file writes, no network calls
 - **Conservative**: Prefer false negatives over false positives
+- **Contract-stable**: JSONL schema v1 guarantees key ordering and field presence
 
 ## Exit Codes
 
