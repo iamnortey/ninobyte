@@ -98,3 +98,6 @@ ops/evidence/**/*.redacted
 # macOS
 .DS_Store
 **/.DS_Store
+
+# Build artifacts
+/dist/
