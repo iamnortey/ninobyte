@@ -1,0 +1,12 @@
+{
+  "baseRefName": "main",
+  "headRefName": "feat/lexicon-packs-mvp",
+  "mergeCommit": {
+    "oid": "c89722f1bb922bee1b584bd7b6a4c92c8dd4663f"
+  },
+  "mergedAt": "2025-12-23T05:25:27Z",
+  "number": 62,
+  "state": "MERGED",
+  "title": "feat(lexicon-packs): MVP schema + validator + loader + ghana-core pack",
+  "url": "https://github.com/iamnortey/ninobyte/pull/62"
+}
