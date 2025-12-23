@@ -1,0 +1,12 @@
+{
+  "baseRefName": "main",
+  "headRefName": "chore/release-v0.8.3",
+  "mergeCommit": {
+    "oid": "1424bb2f9c924dd36cd4f80f980e770aaf11cd3d"
+  },
+  "mergedAt": "2025-12-23T04:22:39Z",
+  "number": 54,
+  "state": "MERGED",
+  "title": "chore(release): prepare v0.8.3 release surface",
+  "url": "https://github.com/iamnortey/ninobyte/pull/54"
+}
