@@ -1,0 +1,2 @@
+# Override root .gitignore to allow log fixtures for proof commands
+!*.log
