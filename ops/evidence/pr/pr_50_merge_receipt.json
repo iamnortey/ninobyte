@@ -1,0 +1,12 @@
+{
+  "baseRefName": "main",
+  "headRefName": "ci/validation-cross-link-policy",
+  "mergeCommit": {
+    "oid": "7328a31aa4133bfdbd073f73bb6341f57d51081b"
+  },
+  "mergedAt": "2025-12-23T02:18:09Z",
+  "number": 50,
+  "state": "MERGED",
+  "title": "ci(validation): enforce validation log receipt cross-links",
+  "url": "https://github.com/iamnortey/ninobyte/pull/50"
+}
