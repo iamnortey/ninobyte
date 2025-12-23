@@ -1,0 +1,246 @@
+Validate Artifacts (Official Conventions)	Set up job	﻿2025-12-22T23:50:57.9763592Z Current runner version: '2.330.0'
+Validate Artifacts (Official Conventions)	Set up job	2025-12-22T23:50:57.9797613Z ##[group]Runner Image Provisioner
+Validate Artifacts (Official Conventions)	Set up job	2025-12-22T23:50:57.9798972Z Hosted Compute Agent
+Validate Artifacts (Official Conventions)	Set up job	2025-12-22T23:50:57.9799979Z Version: 20251211.462
+Validate Artifacts (Official Conventions)	Set up job	2025-12-22T23:50:57.9801417Z Commit: 6cbad8c2bb55d58165063d031ccabf57e2d2db61
+Validate Artifacts (Official Conventions)	Set up job	2025-12-22T23:50:57.9802626Z Build Date: 2025-12-11T16:28:49Z
+Validate Artifacts (Official Conventions)	Set up job	2025-12-22T23:50:57.9803655Z Worker ID: {afc1b087-f6e9-46ae-833f-875761ea4a6a}
+Validate Artifacts (Official Conventions)	Set up job	2025-12-22T23:50:57.9804957Z ##[endgroup]
+Validate Artifacts (Official Conventions)	Set up job	2025-12-22T23:50:57.9805878Z ##[group]Operating System
+Validate Artifacts (Official Conventions)	Set up job	2025-12-22T23:50:57.9806903Z Ubuntu
+Validate Artifacts (Official Conventions)	Set up job	2025-12-22T23:50:57.9807878Z 24.04.3
+Validate Artifacts (Official Conventions)	Set up job	2025-12-22T23:50:57.9808701Z LTS
+Validate Artifacts (Official Conventions)	Set up job	2025-12-22T23:50:57.9809493Z ##[endgroup]
+Validate Artifacts (Official Conventions)	Set up job	2025-12-22T23:50:57.9810332Z ##[group]Runner Image
+Validate Artifacts (Official Conventions)	Set up job	2025-12-22T23:50:57.9811681Z Image: ubuntu-24.04
+Validate Artifacts (Official Conventions)	Set up job	2025-12-22T23:50:57.9812530Z Version: 20251215.174.1
+Validate Artifacts (Official Conventions)	Set up job	2025-12-22T23:50:57.9814463Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20251215.174/images/ubuntu/Ubuntu2404-Readme.md
+Validate Artifacts (Official Conventions)	Set up job	2025-12-22T23:50:57.9817149Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20251215.174
+Validate Artifacts (Official Conventions)	Set up job	2025-12-22T23:50:57.9819178Z ##[endgroup]
+Validate Artifacts (Official Conventions)	Set up job	2025-12-22T23:50:57.9821219Z ##[group]GITHUB_TOKEN Permissions
+Validate Artifacts (Official Conventions)	Set up job	2025-12-22T23:50:57.9824069Z Contents: read
+Validate Artifacts (Official Conventions)	Set up job	2025-12-22T23:50:57.9825099Z Metadata: read
+Validate Artifacts (Official Conventions)	Set up job	2025-12-22T23:50:57.9825995Z Packages: read
+Validate Artifacts (Official Conventions)	Set up job	2025-12-22T23:50:57.9826896Z ##[endgroup]
+Validate Artifacts (Official Conventions)	Set up job	2025-12-22T23:50:57.9830857Z Secret source: Actions
+Validate Artifacts (Official Conventions)	Set up job	2025-12-22T23:50:57.9832446Z Prepare workflow directory
+Validate Artifacts (Official Conventions)	Set up job	2025-12-22T23:50:58.0173020Z Prepare all required actions
+Validate Artifacts (Official Conventions)	Set up job	2025-12-22T23:50:58.0211665Z Getting action download info
+Validate Artifacts (Official Conventions)	Set up job	2025-12-22T23:50:58.3376703Z Download action repository 'actions/checkout@v4' (SHA:34e114876b0b11c390a56381ad16ebd13914f8d5)
+Validate Artifacts (Official Conventions)	Set up job	2025-12-22T23:50:58.4297463Z Download action repository 'actions/setup-python@v5' (SHA:a26af69be951a213d495a4c3e4e4022e16d87065)
+Validate Artifacts (Official Conventions)	Set up job	2025-12-22T23:50:58.6117850Z Complete job name: Validate Artifacts (Official Conventions)
+Validate Artifacts (Official Conventions)	Checkout	﻿2025-12-22T23:50:58.6797407Z ##[group]Run actions/checkout@v4
+Validate Artifacts (Official Conventions)	Checkout	2025-12-22T23:50:58.6798254Z with:
+Validate Artifacts (Official Conventions)	Checkout	2025-12-22T23:50:58.6798668Z   repository: iamnortey/ninobyte
+Validate Artifacts (Official Conventions)	Checkout	2025-12-22T23:50:58.6799307Z   token: ***
+Validate Artifacts (Official Conventions)	Checkout	2025-12-22T23:50:58.6799688Z   ssh-strict: true
+Validate Artifacts (Official Conventions)	Checkout	2025-12-22T23:50:58.6800056Z   ssh-user: git
+Validate Artifacts (Official Conventions)	Checkout	2025-12-22T23:50:58.6800673Z   persist-credentials: true
+Validate Artifacts (Official Conventions)	Checkout	2025-12-22T23:50:58.6801120Z   clean: true
+Validate Artifacts (Official Conventions)	Checkout	2025-12-22T23:50:58.6801510Z   sparse-checkout-cone-mode: true
+Validate Artifacts (Official Conventions)	Checkout	2025-12-22T23:50:58.6801979Z   fetch-depth: 1
+Validate Artifacts (Official Conventions)	Checkout	2025-12-22T23:50:58.6802356Z   fetch-tags: false
+Validate Artifacts (Official Conventions)	Checkout	2025-12-22T23:50:58.6802750Z   show-progress: true
+Validate Artifacts (Official Conventions)	Checkout	2025-12-22T23:50:58.6803140Z   lfs: false
+Validate Artifacts (Official Conventions)	Checkout	2025-12-22T23:50:58.6803493Z   submodules: false
+Validate Artifacts (Official Conventions)	Checkout	2025-12-22T23:50:58.6803877Z   set-safe-directory: true
+Validate Artifacts (Official Conventions)	Checkout	2025-12-22T23:50:58.6804558Z ##[endgroup]
+Validate Artifacts (Official Conventions)	Checkout	2025-12-22T23:50:58.7856334Z Syncing repository: iamnortey/ninobyte
+Validate Artifacts (Official Conventions)	Checkout	2025-12-22T23:50:58.7858037Z ##[group]Getting Git version info
+Validate Artifacts (Official Conventions)	Checkout	2025-12-22T23:50:58.7858730Z Working directory is '/home/runner/work/ninobyte/ninobyte'
+Validate Artifacts (Official Conventions)	Checkout	2025-12-22T23:50:58.7859631Z [command]/usr/bin/git version
+Validate Artifacts (Official Conventions)	Checkout	2025-12-22T23:50:58.7946713Z git version 2.52.0
+Validate Artifacts (Official Conventions)	Checkout	2025-12-22T23:50:58.7973305Z ##[endgroup]
+Validate Artifacts (Official Conventions)	Checkout	2025-12-22T23:50:58.7995590Z Temporarily overriding HOME='/home/runner/work/_temp/1f38e457-c915-418f-94c3-4f7e957a7730' before making global git config changes
+Validate Artifacts (Official Conventions)	Checkout	2025-12-22T23:50:58.7997988Z Adding repository directory to the temporary git global config as a safe directory
+Validate Artifacts (Official Conventions)	Checkout	2025-12-22T23:50:58.8002030Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/ninobyte/ninobyte
+Validate Artifacts (Official Conventions)	Checkout	2025-12-22T23:50:58.8038642Z Deleting the contents of '/home/runner/work/ninobyte/ninobyte'
+Validate Artifacts (Official Conventions)	Checkout	2025-12-22T23:50:58.8042220Z ##[group]Initializing the repository
+Validate Artifacts (Official Conventions)	Checkout	2025-12-22T23:50:58.8045941Z [command]/usr/bin/git init /home/runner/work/ninobyte/ninobyte
+Validate Artifacts (Official Conventions)	Checkout	2025-12-22T23:50:58.8157163Z hint: Using 'master' as the name for the initial branch. This default branch name
+Validate Artifacts (Official Conventions)	Checkout	2025-12-22T23:50:58.8158630Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+Validate Artifacts (Official Conventions)	Checkout	2025-12-22T23:50:58.8159616Z hint: to use in all of your new repositories, which will suppress this warning,
+Validate Artifacts (Official Conventions)	Checkout	2025-12-22T23:50:58.8161054Z hint: call:
+Validate Artifacts (Official Conventions)	Checkout	2025-12-22T23:50:58.8161746Z hint:
+Validate Artifacts (Official Conventions)	Checkout	2025-12-22T23:50:58.8162523Z hint: 	git config --global init.defaultBranch <name>
+Validate Artifacts (Official Conventions)	Checkout	2025-12-22T23:50:58.8163590Z hint:
+Validate Artifacts (Official Conventions)	Checkout	2025-12-22T23:50:58.8164641Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+Validate Artifacts (Official Conventions)	Checkout	2025-12-22T23:50:58.8166345Z hint: 'development'. The just-created branch can be renamed via this command:
+Validate Artifacts (Official Conventions)	Checkout	2025-12-22T23:50:58.8167692Z hint:
+Validate Artifacts (Official Conventions)	Checkout	2025-12-22T23:50:58.8168455Z hint: 	git branch -m <name>
+Validate Artifacts (Official Conventions)	Checkout	2025-12-22T23:50:58.8169299Z hint:
+Validate Artifacts (Official Conventions)	Checkout	2025-12-22T23:50:58.8170692Z hint: Disable this message with "git config set advice.defaultBranchName false"
+Validate Artifacts (Official Conventions)	Checkout	2025-12-22T23:50:58.8172528Z Initialized empty Git repository in /home/runner/work/ninobyte/ninobyte/.git/
+Validate Artifacts (Official Conventions)	Checkout	2025-12-22T23:50:58.8175368Z [command]/usr/bin/git remote add origin https://github.com/iamnortey/ninobyte
+Validate Artifacts (Official Conventions)	Checkout	2025-12-22T23:50:58.8208015Z ##[endgroup]
+Validate Artifacts (Official Conventions)	Checkout	2025-12-22T23:50:58.8209218Z ##[group]Disabling automatic garbage collection
+Validate Artifacts (Official Conventions)	Checkout	2025-12-22T23:50:58.8213020Z [command]/usr/bin/git config --local gc.auto 0
+Validate Artifacts (Official Conventions)	Checkout	2025-12-22T23:50:58.8241011Z ##[endgroup]
+Validate Artifacts (Official Conventions)	Checkout	2025-12-22T23:50:58.8242223Z ##[group]Setting up auth
+Validate Artifacts (Official Conventions)	Checkout	2025-12-22T23:50:58.8248219Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+Validate Artifacts (Official Conventions)	Checkout	2025-12-22T23:50:58.8277964Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+Validate Artifacts (Official Conventions)	Checkout	2025-12-22T23:50:58.8628220Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+Validate Artifacts (Official Conventions)	Checkout	2025-12-22T23:50:58.8657562Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+Validate Artifacts (Official Conventions)	Checkout	2025-12-22T23:50:58.8873602Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+Validate Artifacts (Official Conventions)	Checkout	2025-12-22T23:50:58.8904824Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+Validate Artifacts (Official Conventions)	Checkout	2025-12-22T23:50:58.9121022Z [command]/usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+Validate Artifacts (Official Conventions)	Checkout	2025-12-22T23:50:58.9155184Z ##[endgroup]
+Validate Artifacts (Official Conventions)	Checkout	2025-12-22T23:50:58.9156429Z ##[group]Fetching the repository
+Validate Artifacts (Official Conventions)	Checkout	2025-12-22T23:50:58.9164733Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +edbc7322475f89e0ad7ab0eb18877b4965dbf7a1:refs/remotes/origin/main
+Validate Artifacts (Official Conventions)	Checkout	2025-12-22T23:50:59.3004030Z From https://github.com/iamnortey/ninobyte
+Validate Artifacts (Official Conventions)	Checkout	2025-12-22T23:50:59.3005327Z  * [new ref]         edbc7322475f89e0ad7ab0eb18877b4965dbf7a1 -> origin/main
+Validate Artifacts (Official Conventions)	Checkout	2025-12-22T23:50:59.3037375Z ##[endgroup]
+Validate Artifacts (Official Conventions)	Checkout	2025-12-22T23:50:59.3038179Z ##[group]Determining the checkout info
+Validate Artifacts (Official Conventions)	Checkout	2025-12-22T23:50:59.3039356Z ##[endgroup]
+Validate Artifacts (Official Conventions)	Checkout	2025-12-22T23:50:59.3044426Z [command]/usr/bin/git sparse-checkout disable
+Validate Artifacts (Official Conventions)	Checkout	2025-12-22T23:50:59.3085269Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+Validate Artifacts (Official Conventions)	Checkout	2025-12-22T23:50:59.3109797Z ##[group]Checking out the ref
+Validate Artifacts (Official Conventions)	Checkout	2025-12-22T23:50:59.3113424Z [command]/usr/bin/git checkout --progress --force -B main refs/remotes/origin/main
+Validate Artifacts (Official Conventions)	Checkout	2025-12-22T23:50:59.3268328Z Switched to a new branch 'main'
+Validate Artifacts (Official Conventions)	Checkout	2025-12-22T23:50:59.3271418Z branch 'main' set up to track 'origin/main'.
+Validate Artifacts (Official Conventions)	Checkout	2025-12-22T23:50:59.3277892Z ##[endgroup]
+Validate Artifacts (Official Conventions)	Checkout	2025-12-22T23:50:59.3310080Z [command]/usr/bin/git log -1 --format=%H
+Validate Artifacts (Official Conventions)	Checkout	2025-12-22T23:50:59.3331870Z edbc7322475f89e0ad7ab0eb18877b4965dbf7a1
+Validate Artifacts (Official Conventions)	Set up Python	﻿2025-12-22T23:50:59.3566888Z ##[group]Run actions/setup-python@v5
+Validate Artifacts (Official Conventions)	Set up Python	2025-12-22T23:50:59.3567433Z with:
+Validate Artifacts (Official Conventions)	Set up Python	2025-12-22T23:50:59.3567788Z   python-version: 3.11
+Validate Artifacts (Official Conventions)	Set up Python	2025-12-22T23:50:59.3568197Z   check-latest: false
+Validate Artifacts (Official Conventions)	Set up Python	2025-12-22T23:50:59.3568736Z   token: ***
+Validate Artifacts (Official Conventions)	Set up Python	2025-12-22T23:50:59.3569118Z   update-environment: true
+Validate Artifacts (Official Conventions)	Set up Python	2025-12-22T23:50:59.3569568Z   allow-prereleases: false
+Validate Artifacts (Official Conventions)	Set up Python	2025-12-22T23:50:59.3569992Z   freethreaded: false
+Validate Artifacts (Official Conventions)	Set up Python	2025-12-22T23:50:59.3570535Z ##[endgroup]
+Validate Artifacts (Official Conventions)	Set up Python	2025-12-22T23:50:59.5214064Z ##[group]Installed versions
+Validate Artifacts (Official Conventions)	Set up Python	2025-12-22T23:50:59.5373836Z Successfully set up CPython (3.11.14)
+Validate Artifacts (Official Conventions)	Set up Python	2025-12-22T23:50:59.5375719Z ##[endgroup]
+Validate Artifacts (Official Conventions)	Run artifact validation	﻿2025-12-22T23:50:59.5505263Z ##[group]Run python scripts/ci/validate_artifacts.py
+Validate Artifacts (Official Conventions)	Run artifact validation	2025-12-22T23:50:59.5506506Z [36;1mpython scripts/ci/validate_artifacts.py[0m
+Validate Artifacts (Official Conventions)	Run artifact validation	2025-12-22T23:50:59.5687841Z shell: /usr/bin/bash -e {0}
+Validate Artifacts (Official Conventions)	Run artifact validation	2025-12-22T23:50:59.5688488Z env:
+Validate Artifacts (Official Conventions)	Run artifact validation	2025-12-22T23:50:59.5689176Z   pythonLocation: /opt/hostedtoolcache/Python/3.11.14/x64
+Validate Artifacts (Official Conventions)	Run artifact validation	2025-12-22T23:50:59.5690800Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.11.14/x64/lib/pkgconfig
+Validate Artifacts (Official Conventions)	Run artifact validation	2025-12-22T23:50:59.5692198Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.11.14/x64
+Validate Artifacts (Official Conventions)	Run artifact validation	2025-12-22T23:50:59.5693405Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.11.14/x64
+Validate Artifacts (Official Conventions)	Run artifact validation	2025-12-22T23:50:59.5694585Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.11.14/x64
+Validate Artifacts (Official Conventions)	Run artifact validation	2025-12-22T23:50:59.5695759Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.11.14/x64/lib
+Validate Artifacts (Official Conventions)	Run artifact validation	2025-12-22T23:50:59.5696696Z ##[endgroup]
+Validate Artifacts (Official Conventions)	Run artifact validation	2025-12-22T23:51:00.0782820Z 
+Validate Artifacts (Official Conventions)	Run artifact validation	2025-12-22T23:51:00.0784058Z ============================================================
+Validate Artifacts (Official Conventions)	Run artifact validation	2025-12-22T23:51:00.0785324Z Ninobyte Artifact Validation
+Validate Artifacts (Official Conventions)	Run artifact validation	2025-12-22T23:51:00.0786212Z ============================================================
+Validate Artifacts (Official Conventions)	Run artifact validation	2025-12-22T23:51:00.0787159Z Repo root: ninobyte
+Validate Artifacts (Official Conventions)	Run artifact validation	2025-12-22T23:51:00.0787588Z 
+Validate Artifacts (Official Conventions)	Run artifact validation	2025-12-22T23:51:00.0787600Z 
+Validate Artifacts (Official Conventions)	Run artifact validation	2025-12-22T23:51:00.0787925Z --- Marketplace Validation ---
+Validate Artifacts (Official Conventions)	Run artifact validation	2025-12-22T23:51:00.0789313Z ✅ marketplace.json is valid: ./.claude-plugin/marketplace.json
+Validate Artifacts (Official Conventions)	Run artifact validation	2025-12-22T23:51:00.0790203Z 
+Validate Artifacts (Official Conventions)	Run artifact validation	2025-12-22T23:51:00.0790793Z --- Claude Code Marketplace Schema (v0.1.3) ---
+Validate Artifacts (Official Conventions)	Run artifact validation	2025-12-22T23:51:00.0792748Z ✅ Plugin source path exists: ninobyte-senior-dev-brain -> ./products/claude-code-plugins/ninobyte-senior-dev-brain
+Validate Artifacts (Official Conventions)	Run artifact validation	2025-12-22T23:51:00.0794723Z ✅ Symlink valid: ./.claude-plugin/products -> ../products
+Validate Artifacts (Official Conventions)	Run artifact validation	2025-12-22T23:51:00.0795985Z ✅ Claude Code marketplace schema validation passed
+Validate Artifacts (Official Conventions)	Run artifact validation	2025-12-22T23:51:00.0796741Z 
+Validate Artifacts (Official Conventions)	Run artifact validation	2025-12-22T23:51:00.0797097Z --- Plugin Structure Validation ---
+Validate Artifacts (Official Conventions)	Run artifact validation	2025-12-22T23:51:00.0798472Z ✅ Plugin directory exists: ./products/claude-code-plugins/ninobyte-senior-dev-brain
+Validate Artifacts (Official Conventions)	Run artifact validation	2025-12-22T23:51:00.0800756Z ✅ plugin.json is valid: ./products/claude-code-plugins/ninobyte-senior-dev-brain/.claude-plugin/plugin.json
+Validate Artifacts (Official Conventions)	Run artifact validation	2025-12-22T23:51:00.0803306Z ✅ Plugin skill directory exists: ./products/claude-code-plugins/ninobyte-senior-dev-brain/skills/senior-developer-brain
+Validate Artifacts (Official Conventions)	Run artifact validation	2025-12-22T23:51:00.0806627Z ✅ SKILL.md has valid frontmatter with name and description: ./products/claude-code-plugins/ninobyte-senior-dev-brain/skills/senior-developer-brain/SKILL.md
+Validate Artifacts (Official Conventions)	Run artifact validation	2025-12-22T23:51:00.0808610Z 
+Validate Artifacts (Official Conventions)	Run artifact validation	2025-12-22T23:51:00.0808949Z --- Canonical Skill Validation ---
+Validate Artifacts (Official Conventions)	Run artifact validation	2025-12-22T23:51:00.0810806Z ✅ SKILL.md has valid frontmatter with name and description: ./skills/senior-developer-brain/SKILL.md
+Validate Artifacts (Official Conventions)	Run artifact validation	2025-12-22T23:51:00.0812130Z 
+Validate Artifacts (Official Conventions)	Run artifact validation	2025-12-22T23:51:00.0812468Z --- Test Artifacts Validation ---
+Validate Artifacts (Official Conventions)	Run artifact validation	2025-12-22T23:51:00.0813919Z ✅ Test fixtures directory exists: ./skills/senior-developer-brain/tests/fixtures
+Validate Artifacts (Official Conventions)	Run artifact validation	2025-12-22T23:51:00.0815302Z ✅ Found 1 fixture file(s)
+Validate Artifacts (Official Conventions)	Run artifact validation	2025-12-22T23:51:00.0816557Z ✅ Test goldens directory exists: ./skills/senior-developer-brain/tests/goldens
+Validate Artifacts (Official Conventions)	Run artifact validation	2025-12-22T23:51:00.0817971Z ✅ Found 1 golden file(s)
+Validate Artifacts (Official Conventions)	Run artifact validation	2025-12-22T23:51:00.0818499Z 
+Validate Artifacts (Official Conventions)	Run artifact validation	2025-12-22T23:51:00.0818970Z --- Architecture Review Format Validation (v0.1.2) ---
+Validate Artifacts (Official Conventions)	Run artifact validation	2025-12-22T23:51:00.0820070Z ✅ Concerns table header present
+Validate Artifacts (Official Conventions)	Run artifact validation	2025-12-22T23:51:00.0821087Z ✅ Risks table header present
+Validate Artifacts (Official Conventions)	Run artifact validation	2025-12-22T23:51:00.0822929Z ✅ Architecture Review format validation passed: ./skills/senior-developer-brain/tests/goldens/golden_001_expected.md
+Validate Artifacts (Official Conventions)	Run artifact validation	2025-12-22T23:51:00.0824625Z 
+Validate Artifacts (Official Conventions)	Run artifact validation	2025-12-22T23:51:00.0825078Z --- Skill Drift Check (v0.1.2) ---
+Validate Artifacts (Official Conventions)	Run artifact validation	2025-12-22T23:51:00.0826399Z ✅ No drift between canonical and plugin skill copies
+Validate Artifacts (Official Conventions)	Run artifact validation	2025-12-22T23:51:00.0827332Z 
+Validate Artifacts (Official Conventions)	Run artifact validation	2025-12-22T23:51:00.0827753Z --- Security Scan ---
+Validate Artifacts (Official Conventions)	Run artifact validation	2025-12-22T23:51:00.0828878Z ✅ No obvious secret patterns found
+Validate Artifacts (Official Conventions)	Run artifact validation	2025-12-22T23:51:00.0829616Z 
+Validate Artifacts (Official Conventions)	Run artifact validation	2025-12-22T23:51:00.0830138Z --- Markdown Secret-Scan Hygiene (v0.2.2) ---
+Validate Artifacts (Official Conventions)	Run artifact validation	2025-12-22T23:51:00.0831859Z ✅ Markdown secret-scan hygiene passed (11 files scanned)
+Validate Artifacts (Official Conventions)	Run artifact validation	2025-12-22T23:51:00.0832838Z 
+Validate Artifacts (Official Conventions)	Run artifact validation	2025-12-22T23:51:00.0833802Z --- Ninobyte AirGap MCP Server Validation (v0.2.0) ---
+Validate Artifacts (Official Conventions)	Run artifact validation	2025-12-22T23:51:00.0835443Z ✅ AirGap README exists
+Validate Artifacts (Official Conventions)	Run artifact validation	2025-12-22T23:51:00.0836555Z ✅ AirGap Security Policy exists
+Validate Artifacts (Official Conventions)	Run artifact validation	2025-12-22T23:51:00.0837743Z ✅ Source package init exists
+Validate Artifacts (Official Conventions)	Run artifact validation	2025-12-22T23:51:00.0839004Z ✅ AirGap: No forbidden networking imports found
+Validate Artifacts (Official Conventions)	Run artifact validation	2025-12-22T23:51:00.0840556Z ✅ AirGap: No shell execution violations found
+Validate Artifacts (Official Conventions)	Run artifact validation	2025-12-22T23:51:00.0841405Z 
+Validate Artifacts (Official Conventions)	Run artifact validation	2025-12-22T23:51:00.0842030Z --- Ninobyte OpsPack Governance Validation (v0.3.0) ---
+Validate Artifacts (Official Conventions)	Run artifact validation	2025-12-22T23:51:00.0843558Z ✅ OpsPack: No forbidden networking imports found
+Validate Artifacts (Official Conventions)	Run artifact validation	2025-12-22T23:51:00.0845009Z ✅ OpsPack: No shell execution violations found
+Validate Artifacts (Official Conventions)	Run artifact validation	2025-12-22T23:51:00.0846395Z ✅ OpsPack: No file write violations found
+Validate Artifacts (Official Conventions)	Run artifact validation	2025-12-22T23:51:00.0847190Z 
+Validate Artifacts (Official Conventions)	Run artifact validation	2025-12-22T23:51:00.0847721Z --- Branch Scope Validation (Governance) ---
+Validate Artifacts (Official Conventions)	Run artifact validation	2025-12-22T23:51:00.0849216Z ℹ️  On main branch or unknown branch (skipping scope check)
+Validate Artifacts (Official Conventions)	Run artifact validation	2025-12-22T23:51:00.0850161Z 
+Validate Artifacts (Official Conventions)	Run artifact validation	2025-12-22T23:51:00.0850809Z ============================================================
+Validate Artifacts (Official Conventions)	Run artifact validation	2025-12-22T23:51:00.0852199Z ✅ All validations PASSED
+Validate Artifacts (Official Conventions)	Install test dependencies (pinned)	﻿2025-12-22T23:51:00.0924874Z ##[group]Run set -euo pipefail
+Validate Artifacts (Official Conventions)	Install test dependencies (pinned)	2025-12-22T23:51:00.0925984Z [36;1mset -euo pipefail[0m
+Validate Artifacts (Official Conventions)	Install test dependencies (pinned)	2025-12-22T23:51:00.0927063Z [36;1mpython -m pip install --upgrade pip[0m
+Validate Artifacts (Official Conventions)	Install test dependencies (pinned)	2025-12-22T23:51:00.0928410Z [36;1mpython -m pip install -r requirements-test.txt[0m
+Validate Artifacts (Official Conventions)	Install test dependencies (pinned)	2025-12-22T23:51:00.0966368Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+Validate Artifacts (Official Conventions)	Install test dependencies (pinned)	2025-12-22T23:51:00.0967641Z env:
+Validate Artifacts (Official Conventions)	Install test dependencies (pinned)	2025-12-22T23:51:00.0968668Z   pythonLocation: /opt/hostedtoolcache/Python/3.11.14/x64
+Validate Artifacts (Official Conventions)	Install test dependencies (pinned)	2025-12-22T23:51:00.0970283Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.11.14/x64/lib/pkgconfig
+Validate Artifacts (Official Conventions)	Install test dependencies (pinned)	2025-12-22T23:51:00.0972014Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.11.14/x64
+Validate Artifacts (Official Conventions)	Install test dependencies (pinned)	2025-12-22T23:51:00.0973480Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.11.14/x64
+Validate Artifacts (Official Conventions)	Install test dependencies (pinned)	2025-12-22T23:51:00.0974953Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.11.14/x64
+Validate Artifacts (Official Conventions)	Install test dependencies (pinned)	2025-12-22T23:51:00.0976421Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.11.14/x64/lib
+Validate Artifacts (Official Conventions)	Install test dependencies (pinned)	2025-12-22T23:51:00.0977697Z ##[endgroup]
+Validate Artifacts (Official Conventions)	Install test dependencies (pinned)	2025-12-22T23:51:01.7281587Z Requirement already satisfied: pip in /opt/hostedtoolcache/Python/3.11.14/x64/lib/python3.11/site-packages (25.3)
+Validate Artifacts (Official Conventions)	Install test dependencies (pinned)	2025-12-22T23:51:02.4718269Z Collecting pytest==8.3.5 (from -r requirements-test.txt (line 4))
+Validate Artifacts (Official Conventions)	Install test dependencies (pinned)	2025-12-22T23:51:02.5641735Z   Downloading pytest-8.3.5-py3-none-any.whl.metadata (7.6 kB)
+Validate Artifacts (Official Conventions)	Install test dependencies (pinned)	2025-12-22T23:51:02.5910887Z Collecting iniconfig (from pytest==8.3.5->-r requirements-test.txt (line 4))
+Validate Artifacts (Official Conventions)	Install test dependencies (pinned)	2025-12-22T23:51:02.6045582Z   Downloading iniconfig-2.3.0-py3-none-any.whl.metadata (2.5 kB)
+Validate Artifacts (Official Conventions)	Install test dependencies (pinned)	2025-12-22T23:51:02.6358052Z Collecting packaging (from pytest==8.3.5->-r requirements-test.txt (line 4))
+Validate Artifacts (Official Conventions)	Install test dependencies (pinned)	2025-12-22T23:51:02.6501095Z   Downloading packaging-25.0-py3-none-any.whl.metadata (3.3 kB)
+Validate Artifacts (Official Conventions)	Install test dependencies (pinned)	2025-12-22T23:51:02.6763915Z Collecting pluggy<2,>=1.5 (from pytest==8.3.5->-r requirements-test.txt (line 4))
+Validate Artifacts (Official Conventions)	Install test dependencies (pinned)	2025-12-22T23:51:02.6901184Z   Downloading pluggy-1.6.0-py3-none-any.whl.metadata (4.8 kB)
+Validate Artifacts (Official Conventions)	Install test dependencies (pinned)	2025-12-22T23:51:02.7096089Z Downloading pytest-8.3.5-py3-none-any.whl (343 kB)
+Validate Artifacts (Official Conventions)	Install test dependencies (pinned)	2025-12-22T23:51:02.7697674Z Downloading pluggy-1.6.0-py3-none-any.whl (20 kB)
+Validate Artifacts (Official Conventions)	Install test dependencies (pinned)	2025-12-22T23:51:02.7790174Z Downloading iniconfig-2.3.0-py3-none-any.whl (7.5 kB)
+Validate Artifacts (Official Conventions)	Install test dependencies (pinned)	2025-12-22T23:51:02.7959696Z Downloading packaging-25.0-py3-none-any.whl (66 kB)
+Validate Artifacts (Official Conventions)	Install test dependencies (pinned)	2025-12-22T23:51:02.8182477Z Installing collected packages: pluggy, packaging, iniconfig, pytest
+Validate Artifacts (Official Conventions)	Install test dependencies (pinned)	2025-12-22T23:51:03.0876525Z 
+Validate Artifacts (Official Conventions)	Install test dependencies (pinned)	2025-12-22T23:51:03.0890232Z Successfully installed iniconfig-2.3.0 packaging-25.0 pluggy-1.6.0 pytest-8.3.5
+Validate Artifacts (Official Conventions)	Run pytest (repo root)	﻿2025-12-22T23:51:03.1354811Z ##[group]Run set -euo pipefail
+Validate Artifacts (Official Conventions)	Run pytest (repo root)	2025-12-22T23:51:03.1355143Z [36;1mset -euo pipefail[0m
+Validate Artifacts (Official Conventions)	Run pytest (repo root)	2025-12-22T23:51:03.1355382Z [36;1mpython -m pytest -q[0m
+Validate Artifacts (Official Conventions)	Run pytest (repo root)	2025-12-22T23:51:03.1388692Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+Validate Artifacts (Official Conventions)	Run pytest (repo root)	2025-12-22T23:51:03.1389002Z env:
+Validate Artifacts (Official Conventions)	Run pytest (repo root)	2025-12-22T23:51:03.1389247Z   pythonLocation: /opt/hostedtoolcache/Python/3.11.14/x64
+Validate Artifacts (Official Conventions)	Run pytest (repo root)	2025-12-22T23:51:03.1389642Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.11.14/x64/lib/pkgconfig
+Validate Artifacts (Official Conventions)	Run pytest (repo root)	2025-12-22T23:51:03.1390043Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.11.14/x64
+Validate Artifacts (Official Conventions)	Run pytest (repo root)	2025-12-22T23:51:03.1390773Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.11.14/x64
+Validate Artifacts (Official Conventions)	Run pytest (repo root)	2025-12-22T23:51:03.1391127Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.11.14/x64
+Validate Artifacts (Official Conventions)	Run pytest (repo root)	2025-12-22T23:51:03.1391488Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.11.14/x64/lib
+Validate Artifacts (Official Conventions)	Run pytest (repo root)	2025-12-22T23:51:03.1391778Z ##[endgroup]
+Validate Artifacts (Official Conventions)	Run pytest (repo root)	2025-12-22T23:51:04.0442652Z ........................................................................ [ 78%]
+Validate Artifacts (Official Conventions)	Run pytest (repo root)	2025-12-22T23:51:04.3434762Z ....................                                                     [100%]
+Validate Artifacts (Official Conventions)	Post Set up Python	﻿2025-12-22T23:51:04.3772777Z Post job cleanup.
+Validate Artifacts (Official Conventions)	Post Checkout	﻿2025-12-22T23:51:04.5366555Z Post job cleanup.
+Validate Artifacts (Official Conventions)	Post Checkout	2025-12-22T23:51:04.6288202Z [command]/usr/bin/git version
+Validate Artifacts (Official Conventions)	Post Checkout	2025-12-22T23:51:04.6323729Z git version 2.52.0
+Validate Artifacts (Official Conventions)	Post Checkout	2025-12-22T23:51:04.6367363Z Temporarily overriding HOME='/home/runner/work/_temp/b09f8749-25f6-401e-887a-e27769ef3cd9' before making global git config changes
+Validate Artifacts (Official Conventions)	Post Checkout	2025-12-22T23:51:04.6368709Z Adding repository directory to the temporary git global config as a safe directory
+Validate Artifacts (Official Conventions)	Post Checkout	2025-12-22T23:51:04.6373914Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/ninobyte/ninobyte
+Validate Artifacts (Official Conventions)	Post Checkout	2025-12-22T23:51:04.6409738Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+Validate Artifacts (Official Conventions)	Post Checkout	2025-12-22T23:51:04.6443313Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+Validate Artifacts (Official Conventions)	Post Checkout	2025-12-22T23:51:04.6674675Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+Validate Artifacts (Official Conventions)	Post Checkout	2025-12-22T23:51:04.6695507Z http.https://github.com/.extraheader
+Validate Artifacts (Official Conventions)	Post Checkout	2025-12-22T23:51:04.6707691Z [command]/usr/bin/git config --local --unset-all http.https://github.com/.extraheader
+Validate Artifacts (Official Conventions)	Post Checkout	2025-12-22T23:51:04.6737094Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+Validate Artifacts (Official Conventions)	Post Checkout	2025-12-22T23:51:04.6955442Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+Validate Artifacts (Official Conventions)	Post Checkout	2025-12-22T23:51:04.6985146Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+Validate Artifacts (Official Conventions)	Complete job	﻿2025-12-22T23:51:04.7310361Z Cleaning up orphan processes
