@@ -1,0 +1,12 @@
+{
+  "baseRefName": "main",
+  "headRefName": "feat/lexicon-pack-lockfiles",
+  "mergeCommit": {
+    "oid": "634321bff12ac50b83ae26065d2e8b71c4f9a6b1"
+  },
+  "mergedAt": "2025-12-23T06:41:59Z",
+  "number": 66,
+  "state": "MERGED",
+  "title": "feat(lexicon-packs): pack lockfiles + verify gate",
+  "url": "https://github.com/iamnortey/ninobyte/pull/66"
+}

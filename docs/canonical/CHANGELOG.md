@@ -6,6 +6,54 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.8.8] - 2025-12-23
+
+### Added
+
+- **Lexicon Packs Lockfiles** (`products/lexicon-packs/`)
+  - Supply-chain auditability via deterministic pack lockfiles
+  - New `lockfile.py` module with generation and verification
+  - `python -m lexicon_packs lock --pack <path>` — Print lockfile JSON to stdout
+  - `python -m lexicon_packs lock --pack <path> --write` — Write `pack.lock.json`
+  - `python -m lexicon_packs verify --pack <path>` — Verify pack matches lockfile
+  - `--fixed-time` flag for deterministic timestamps (ISO 8601)
+
+- **Lockfile Schema v1.0.0**
+  - `lock_schema_version` — Lockfile schema version
+  - `generated_at_utc` — Timestamp (deterministic with `--fixed-time`)
+  - `pack_id` — Lexicon Pack ID
+  - `pack_schema_version` — Pack schema version
+  - `pack_json_sha256` — SHA256 of canonical pack.json
+  - `entries_file` — Relative path to entries file
+  - `entries_file_sha256` — SHA256 of raw entries file bytes
+  - `normalized_entries_sha256` — SHA256 of normalized entries (order-independent)
+  - `entry_count` — Total entry count
+  - `fields_signature` — SHA256 of field names in order
+
+- **Lockfile CI Gate**
+  - `scripts/ci/validate_lexicon_packs_lockfiles.py`
+  - Wired into `validate_artifacts.py` (v0.8.8)
+  - Fails on missing, invalid, or drifted lockfiles
+
+- **Lockfile Test Suite** (43 tests)
+  - File and entries hashing
+  - Determinism (byte-for-byte stable output)
+  - Schema validation
+  - Drift detection
+  - CLI commands
+  - Path traversal protection
+
+- **Ghana Core Lockfile**
+  - Committed `pack.lock.json` with fixed timestamp `2025-01-01T00:00:00Z`
+
+### Security
+
+- Path traversal protection via `resolve()` + `relative_to()` pattern
+- Absolute `entries_path` rejected at schema validation
+- Lockfile verification prevents silent drift
+
+---
+
 ## [0.8.7] - 2025-12-23
 
 ### Added
