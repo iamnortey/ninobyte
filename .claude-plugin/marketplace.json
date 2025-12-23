@@ -5,8 +5,15 @@
     "email": "support@ninobyte.io"
   },
   "metadata": {
-    "description": "Enterprise-grade Claude Code plugins for software engineering workflows",
-    "version": "0.1.1"
+    "description": "Enterprise-grade Claude Code plugins and MCP servers for software engineering workflows",
+    "version": "0.8.3",
+    "mcp_servers": [
+      {
+        "name": "ninobyte-airgap",
+        "path": "./products/mcp-servers/ninobyte-airgap",
+        "description": "Security-hardened, local-only MCP server for file browsing with isolation guarantees"
+      }
+    ]
   },
   "plugins": [
     {

@@ -6,6 +6,174 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.8.3] - 2025-12-22
+
+### Added
+
+- **Evidence Integrity System**
+  - Canonical JSON receipts with SHA256 integrity verification (`ops/evidence/`)
+  - `scripts/ops/capture_pr_merge_receipt.py` for PR merge evidence capture
+  - `scripts/ops/log_validation.py` for validation log entries
+  - `scripts/ops/log_decision.py` for ADR decision receipts
+  - `scripts/ops/build_evidence_index.py` for deterministic INDEX generation
+  - `scripts/ops/canonicalize_json.py` for reproducible JSON formatting
+
+- **CI Governance Gates**
+  - `validate_evidence_integrity.py` — SHA256 verification of all canonical files
+  - `validate_validation_log_links.py` — Cross-link enforcement for validation receipts
+  - `validate_adr_links.py` — Cross-link enforcement for ADR decision receipts
+  - `validate_evidence_index.py` — Deterministic INDEX byte-for-byte check
+  - `validate_no_os_artifacts.py` — macOS `.DS_Store` drift prevention
+
+- **ADR Governance**
+  - ADR template at `docs/adr/TEMPLATE.md`
+  - First ADR: `ADR-20251223-025526-adr-evidence-receipts-and-cross-link-governance.md`
+  - Decision receipts linked to ADRs via canonical JSON
+
+### Changed
+
+- Evidence receipts now use canonical JSON format (sorted keys, 2-space indent)
+- All evidence files have companion `.sha256` checksum files
+- CI runs evidence integrity checks on every push/PR
+
+### PRs Included
+
+- #39: Deterministic skill pack builder + CI gate
+- #40-#41: Repo-root pytest stabilization
+- #42-#43: CI run evidence capture
+- #44-#45: Canonical JSON receipts with SHA256
+- #46: Evidence integrity gate + relative paths
+- #47: Validator hardening + PR receipt backfill
+- #48: Single-command capture+verify workflow
+- #49: Validation log CLI with canonical receipts
+- #50: Validation log cross-link enforcement
+- #51: ADR receipts and cross-link governance
+- #52: Deterministic evidence index
+- #53: macOS artifact drift prevention
+
+---
+
+## [0.8.0] - 2025-12-21
+
+### Added
+
+- **ContextCleaner Core** (`products/context-cleaner/`)
+  - JSONL output with schema v1 contract
+  - Redactor with PII pattern matching
+  - Lexicon-based term normalization
+  - Table normalizer for structured data
+  - PDF extractor with pdfplumber integration
+  - CLI entrypoints: `ninobyte-context-cleaner`, `context-cleaner`
+
+- **AirGap + ContextCleaner Integration**
+  - `context_cleaner_adapter.py` bridges AirGap and ContextCleaner
+  - Stdlib-only AirGap runtime (no third-party deps at runtime)
+  - Contract policy tests for JSONL compatibility
+
+### Changed
+
+- CI now includes ContextCleaner test matrix (core, PDF, wheel audit)
+- AirGap isolated tests prove stdlib-only runtime
+
+---
+
+## [0.7.0] - 2025-12-21
+
+### Added
+
+- **Senior Developer's Brain v1.0.0** — Major skill update with enhanced modes
+- Release workflow for skill pack distribution
+
+---
+
+## [0.6.0] - 2025-12-20
+
+### Added
+
+- **ContextCleaner MVP** — Initial implementation
+- PDF parsing with pdfplumber
+- JSONL schema v1 contract
+
+---
+
+## [0.2.3] - 2025-12-20
+
+### Fixed
+
+- Additional AirGap security hardening
+
+---
+
+## [0.2.2] - 2025-12-20
+
+### Fixed
+
+- AirGap test coverage improvements
+
+---
+
+## [0.2.1] - 2025-12-20
+
+### Fixed
+
+- Windows-safe blocked path patterns in AirGap (#9)
+
+---
+
+## [0.2.0] - 2025-12-20
+
+### Added
+
+- **AirGap MCP Server** (`products/mcp-servers/ninobyte-airgap/`)
+  - `list_dir` — Directory listing with symlink escape prevention
+  - `read_file` — File reading with size limits, offset/limit, actual bytes audited
+  - `search_text` — Text search using ripgrep or Python fallback
+  - `redact_preview` — Stateless string redaction (no file I/O)
+  - Security: deny-by-default, blocked patterns, path canonicalization
+  - JSONL audit logging with path redaction
+  - 60+ unit tests
+
+- **Vertical Playbook v2.0** (`docs/canonical/VERTICAL_PLAYBOOK_v2_FINAL.md`)
+  - Locked 9 verticals strategy
+  - 4-core product stack mapping
+
+- **CI Validation**
+  - AirGap networking import prohibition (AST-enforced)
+  - AirGap shell=True prohibition (AST-enforced)
+
+### Security
+
+- No network imports in AirGap code
+- No shell=True anywhere in AirGap
+- Symlink escape prevention via canonicalization
+- Traversal attack prevention
+
+---
+
+## [0.1.5] - 2025-12-19
+
+### Fixed
+
+- CI workflow refinements
+
+---
+
+## [0.1.4] - 2025-12-19
+
+### Fixed
+
+- Marketplace source path fix
+
+---
+
+## [0.1.3] - 2025-12-19
+
+### Fixed
+
+- Claude Code marketplace hardening
+
+---
+
 ## [0.1.2] - 2025-12-19
 
 ### Why v0.1.2 Exists
