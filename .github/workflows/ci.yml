@@ -44,6 +44,9 @@ jobs:
           set -euo pipefail
           python -m pytest -q
 
+      - name: Enforce Evidence Integrity
+        run: python scripts/ci/validate_evidence_integrity.py
+
   validate-structure:
     name: Validate Repository Structure
     runs-on: ubuntu-latest

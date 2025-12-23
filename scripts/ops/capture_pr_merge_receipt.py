@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 """Capture PR merge receipt as immutable evidence with canonical hashing.
 
-Creates:
+Creates (idempotent - safe to run multiple times):
 - Raw receipt: ops/evidence/pr/pr_<N>_merge_receipt.json
 - Canonical receipt: ops/evidence/pr/pr_<N>_merge_receipt.canonical.json
 - SHA256 checksum: ops/evidence/pr/pr_<N>_merge_receipt.canonical.json.sha256
+
+The checksum file uses repo-relative paths for portability.
 
 Usage:
     python3 capture_pr_merge_receipt.py --pr 43
@@ -114,9 +116,11 @@ def main() -> int:
     with open(canonical_path, "w", encoding="utf-8") as f:
         f.write(canonical_content)
 
-    # Compute and write SHA256
+    # Compute and write SHA256 with repo-relative path for portability
     sha256_hash = compute_sha256(canonical_content)
-    sha256_line = f"{sha256_hash}  {canonical_path.name}\n"
+    # Use forward slashes for cross-platform compatibility
+    repo_relative_path = str(canonical_path).replace("\\", "/")
+    sha256_line = f"{sha256_hash}  {repo_relative_path}\n"
     with open(sha256_path, "w", encoding="utf-8") as f:
         f.write(sha256_line)
 
