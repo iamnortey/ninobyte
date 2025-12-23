@@ -24,7 +24,23 @@ Canonical JSON ensures:
 ## Generate a Receipt
 
 ```bash
-python3 scripts/ops/capture_pr_merge_receipt.py --pr <NUMBER>
+# Single PR
+python3 scripts/ops/capture_pr_merge_receipt.py 47
+
+# Batch mode (multiple PRs)
+python3 scripts/ops/capture_pr_merge_receipt.py 42 44 45 46
+
+# Range mode (inclusive)
+python3 scripts/ops/capture_pr_merge_receipt.py --range 42..47
+
+# Capture and verify integrity in one command
+python3 scripts/ops/capture_pr_merge_receipt.py 47 --verify
+
+# Dry run (preview without writing)
+python3 scripts/ops/capture_pr_merge_receipt.py 47 --dry-run
+
+# Auto-detect current branch PR (no args)
+python3 scripts/ops/capture_pr_merge_receipt.py
 ```
 
 This creates all three files and prints a summary with the SHA256.
