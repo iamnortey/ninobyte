@@ -9,6 +9,7 @@ import argparse
 import sys
 
 from netopspack import __version__
+from netopspack.diagnose import diagnose_file, format_report_json
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -60,6 +61,12 @@ def main(argv: list[str] | None = None) -> int:
         help="Output format (default: json)",
     )
     diagnose_parser.add_argument(
+        "--limit",
+        type=int,
+        default=50,
+        help="Maximum number of events to include (default: 50)",
+    )
+    diagnose_parser.add_argument(
         "--redact",
         action="store_true",
         default=True,
@@ -88,34 +95,33 @@ def cmd_diagnose(args: argparse.Namespace) -> int:
     """
     Execute the diagnose command.
 
-    Currently a stub that returns a structured "not implemented" response.
+    Analyzes a log file and outputs a deterministic JSON report.
     """
     # Determine redaction setting
     redact = not args.no_redact
 
-    # For now, return a structured stub response
-    print(
-        f"NetOpsPack diagnose: not yet implemented",
-        file=sys.stderr,
-    )
-    print(
-        f"  --input: {args.input}",
-        file=sys.stderr,
-    )
-    print(
-        f"  --format: {args.format}",
-        file=sys.stderr,
-    )
-    print(
-        f"  --fixed-time: {args.fixed_time}",
-        file=sys.stderr,
-    )
-    print(
-        f"  --redact: {redact}",
-        file=sys.stderr,
-    )
+    try:
+        report = diagnose_file(
+            input_path=args.input,
+            format=args.format,
+            fixed_time=args.fixed_time,
+            limit=args.limit,
+            redact=redact,
+        )
 
-    return 2
+        # Output JSON
+        print(format_report_json(report))
+        return 0
+
+    except FileNotFoundError as e:
+        print(f"Error: {e}", file=sys.stderr)
+        return 2
+    except ValueError as e:
+        print(f"Error: {e}", file=sys.stderr)
+        return 2
+    except Exception as e:
+        print(f"Error: {e}", file=sys.stderr)
+        return 2
 
 
 if __name__ == "__main__":
