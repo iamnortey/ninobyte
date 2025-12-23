@@ -109,8 +109,8 @@ def cmd_diagnose(args: argparse.Namespace) -> int:
             redact=redact,
         )
 
-        # Output JSON
-        print(format_report_json(report))
+        # Output JSON (already newline-terminated)
+        print(format_report_json(report), end="")
         return 0
 
     except FileNotFoundError as e:

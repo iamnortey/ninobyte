@@ -22,12 +22,37 @@ NetOpsPack is a **deterministic, offline-first** network log analysis toolkit de
 | Configuration management | Read-only analysis |
 | Packet capture/inspection | Log-level analysis only |
 
-## Installation
+## Environment Setup
+
+> **Warning**: On macOS and some Linux distributions, `python` may point to
+> Anaconda, system Python 2.x, or other non-standard installations. Always
+> use `python3` explicitly to ensure consistent behavior.
+
+### Recommended Invocation (No Install)
+
+The canonical way to run NetOpsPack without installation:
 
 ```bash
-# From repository root
 cd products/netopspack
-pip install -e .
+PYTHONPATH=src python3 -m netopspack diagnose --input tests/fixtures/sample_syslog.log --format syslog
+```
+
+This method:
+- Requires no `pip install`
+- Works immediately after `git clone`
+- Uses explicit `python3` for portability
+- Sets `PYTHONPATH` for reliable imports
+
+### Optional: Development Install
+
+For frequent use, install in editable mode:
+
+```bash
+cd products/netopspack
+python3 -m pip install -e .
+
+# Then run without PYTHONPATH:
+python3 -m netopspack diagnose --input tests/fixtures/sample_syslog.log --format syslog
 ```
 
 ## Commands
@@ -37,9 +62,11 @@ pip install -e .
 Analyze network logs and produce structured diagnostic output.
 
 ```bash
-python -m netopspack diagnose --input access.log --format nginx
-python -m netopspack diagnose --input /var/log/syslog --format syslog
-python -m netopspack diagnose --input haproxy.log --format haproxy --fixed-time 2025-01-01T00:00:00Z
+# Recommended: explicit PYTHONPATH
+cd products/netopspack
+PYTHONPATH=src python3 -m netopspack diagnose --input access.log --format nginx
+PYTHONPATH=src python3 -m netopspack diagnose --input /var/log/syslog --format syslog
+PYTHONPATH=src python3 -m netopspack diagnose --input haproxy.log --format haproxy --fixed-time 2025-01-01T00:00:00Z
 ```
 
 **Options:**
@@ -129,14 +156,16 @@ This enables:
 ### Basic Usage
 
 ```bash
+cd products/netopspack
+
 # Analyze nginx access log
-python -m netopspack diagnose --input /var/log/nginx/access.log --format nginx
+PYTHONPATH=src python3 -m netopspack diagnose --input /var/log/nginx/access.log --format nginx
 
 # Analyze syslog with fixed time for testing
-python -m netopspack diagnose --input /var/log/syslog --format syslog --fixed-time 2025-01-01T00:00:00Z
+PYTHONPATH=src python3 -m netopspack diagnose --input /var/log/syslog --format syslog --fixed-time 2025-01-01T00:00:00Z
 
 # Disable redaction for internal debugging
-python -m netopspack diagnose --input debug.log --format syslog --no-redact
+PYTHONPATH=src python3 -m netopspack diagnose --input debug.log --format syslog --no-redact
 ```
 
 ### CI Integration
@@ -145,7 +174,8 @@ python -m netopspack diagnose --input debug.log --format syslog --no-redact
 # .github/workflows/log-analysis.yml
 - name: Analyze production logs
   run: |
-    python -m netopspack diagnose \
+    cd products/netopspack
+    PYTHONPATH=src python3 -m netopspack diagnose \
       --input logs/access.log \
       --format nginx \
       --fixed-time 2025-01-01T00:00:00Z \
@@ -157,9 +187,9 @@ python -m netopspack diagnose --input debug.log --format syslog --no-redact
 
 | Format | Parser | Status |
 |--------|--------|--------|
-| syslog | RFC 3164 / RFC 5424 | Planned |
-| nginx | Combined log format | Planned |
-| haproxy | HTTP log format | Planned |
+| syslog | RFC 3164 | ✅ Implemented |
+| nginx | Combined log format | ✅ Implemented |
+| haproxy | HTTP log format | ✅ Implemented |
 
 ## License
 

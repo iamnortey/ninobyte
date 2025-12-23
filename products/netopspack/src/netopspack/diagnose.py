@@ -175,6 +175,13 @@ def format_report_json(report: dict[str, Any]) -> str:
     """
     Format report as canonical JSON.
 
-    Uses sorted keys and 2-space indentation for determinism.
+    Uses sorted keys, explicit separators, and 2-space indentation for determinism.
+    Output is newline-terminated for POSIX compliance.
     """
-    return json.dumps(report, indent=2, sort_keys=True, ensure_ascii=False)
+    return json.dumps(
+        report,
+        indent=2,
+        sort_keys=True,
+        ensure_ascii=False,
+        separators=(",", ": "),
+    ) + "\n"
