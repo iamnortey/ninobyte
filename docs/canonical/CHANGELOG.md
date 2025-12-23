@@ -6,6 +6,27 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.8.5] - 2025-12-23
+
+### Added
+
+- **ContextCleaner Release-Grade Documentation**
+  - `SECURITY.md` — Security policy with contributor guidelines
+  - "What ContextCleaner is NOT" section in README (non-goals table)
+  - Security guarantees: no network, no shell, no file writes, no OCR
+
+### Fixed
+
+- Fixed pytest return warnings in `test_smoke_script_contract.py`
+  - Renamed imported smoke test functions to avoid pytest auto-discovery
+  - 17 tests now run without warnings
+
+### PRs Included
+
+- #60: ContextCleaner v0.8.5 release surface (contract + docs)
+
+---
+
 ## [0.8.4] - 2025-12-23
 
 ### Added

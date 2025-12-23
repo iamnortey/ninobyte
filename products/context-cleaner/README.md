@@ -2,6 +2,27 @@
 
 Deterministic PII redaction for LLM context preparation.
 
+**Version**: 0.1.0
+
+---
+
+## What ContextCleaner is NOT
+
+ContextCleaner explicitly excludes the following capabilities:
+
+| Non-Goal | Rationale |
+|----------|-----------|
+| Network access | No HTTP clients, no API calls, no telemetry |
+| Shell execution | No subprocess with shell=True, no os.system() |
+| File writes | Read-only operations only (STDIN/file → STDOUT) |
+| OCR | No optical character recognition for scanned PDFs |
+| ML/NLP | No machine learning, no named entity recognition |
+| External services | No cloud dependencies, no API integrations |
+
+These are **hard security guarantees**, enforced by CI and static analysis.
+
+---
+
 ## Install & Run Matrix
 
 ### Installation Methods
