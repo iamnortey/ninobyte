@@ -347,3 +347,4 @@ my-plugin/
 |----|-------|----------|----------|
 | VL-20251219-001 | Skills/MCP/Plugin schemas | HIGH | ✅ RESOLVED by VL-20251219-003/004/005 |
 | VL-20251219-002 | Manual web verification | HIGH | ✅ RESOLVED by VL-20251219-003/004/005 |
+| 2025-12-23 01:59:16Z | Evidence engine now covers decisions | verified | medium | internal governance decision | `ops/evidence/validation/validation_20251223_015916_2e080e8.canonical.json` |
