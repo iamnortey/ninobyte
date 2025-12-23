@@ -1,0 +1,12 @@
+{
+  "baseRefName": "main",
+  "headRefName": "chore/release-v0.8.4",
+  "mergeCommit": {
+    "oid": "ca8d771622262772edb2cf99a9d76c50ef8dbba9"
+  },
+  "mergedAt": "2025-12-23T04:50:32Z",
+  "number": 58,
+  "state": "MERGED",
+  "title": "chore(release): prepare v0.8.4 release notes (OpsPack MVP)",
+  "url": "https://github.com/iamnortey/ninobyte/pull/58"
+}
