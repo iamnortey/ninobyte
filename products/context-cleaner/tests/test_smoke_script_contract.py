@@ -26,13 +26,13 @@ sys.path.insert(0, str(SCRIPTS_DIR))
 
 from smoke_context_cleaner import (
     capture_cli,
-    test_stdin_jsonl_key_order,
-    test_normalized_explicit_null,
-    test_normalized_string_with_tables,
-    test_lexicon_meta_present,
-    test_reserved_token_protection,
-    test_path_traversal_rejected,
-    test_determinism,
+    test_stdin_jsonl_key_order as smoke_stdin_jsonl_key_order,
+    test_normalized_explicit_null as smoke_normalized_explicit_null,
+    test_normalized_string_with_tables as smoke_normalized_string_with_tables,
+    test_lexicon_meta_present as smoke_lexicon_meta_present,
+    test_reserved_token_protection as smoke_reserved_token_protection,
+    test_path_traversal_rejected as smoke_path_traversal_rejected,
+    test_determinism as smoke_determinism,
     SmokeResult,
 )
 
@@ -90,45 +90,45 @@ class TestSmokeTestFunctions:
     """Tests for individual smoke test functions."""
 
     def test_stdin_jsonl_key_order_passes(self):
-        """test_stdin_jsonl_key_order returns PASS."""
-        result = test_stdin_jsonl_key_order()
+        """smoke_stdin_jsonl_key_order returns PASS."""
+        result = smoke_stdin_jsonl_key_order()
 
         assert isinstance(result, SmokeResult)
         assert result.passed, f"Expected PASS, got: {result.message}"
 
     def test_normalized_explicit_null_passes(self):
-        """test_normalized_explicit_null returns PASS."""
-        result = test_normalized_explicit_null()
+        """smoke_normalized_explicit_null returns PASS."""
+        result = smoke_normalized_explicit_null()
 
         assert result.passed, f"Expected PASS, got: {result.message}"
 
     def test_normalized_string_with_tables_passes(self):
-        """test_normalized_string_with_tables returns PASS."""
-        result = test_normalized_string_with_tables()
+        """smoke_normalized_string_with_tables returns PASS."""
+        result = smoke_normalized_string_with_tables()
 
         assert result.passed, f"Expected PASS, got: {result.message}"
 
     def test_lexicon_meta_present_passes(self):
-        """test_lexicon_meta_present returns PASS."""
-        result = test_lexicon_meta_present()
+        """smoke_lexicon_meta_present returns PASS."""
+        result = smoke_lexicon_meta_present()
 
         assert result.passed, f"Expected PASS, got: {result.message}"
 
     def test_reserved_token_protection_passes(self):
-        """test_reserved_token_protection returns PASS."""
-        result = test_reserved_token_protection()
+        """smoke_reserved_token_protection returns PASS."""
+        result = smoke_reserved_token_protection()
 
         assert result.passed, f"Expected PASS, got: {result.message}"
 
     def test_path_traversal_rejected_passes(self):
-        """test_path_traversal_rejected returns PASS."""
-        result = test_path_traversal_rejected()
+        """smoke_path_traversal_rejected returns PASS."""
+        result = smoke_path_traversal_rejected()
 
         assert result.passed, f"Expected PASS, got: {result.message}"
 
     def test_determinism_passes(self):
-        """test_determinism returns PASS."""
-        result = test_determinism()
+        """smoke_determinism returns PASS."""
+        result = smoke_determinism()
 
         assert result.passed, f"Expected PASS, got: {result.message}"
 
