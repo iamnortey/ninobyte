@@ -1,0 +1,49 @@
+{
+  "generated_at_utc": "2025-01-01T00:00:00Z",
+  "match_strategy": "casefolded_exact",
+  "matches": [
+    {
+      "count": 1,
+      "term": "Accra"
+    },
+    {
+      "count": 1,
+      "term": "Ashanti"
+    },
+    {
+      "count": 1,
+      "term": "Cape Coast Castle"
+    },
+    {
+      "count": 1,
+      "term": "Central"
+    },
+    {
+      "count": 1,
+      "term": "Ghana"
+    },
+    {
+      "count": 1,
+      "term": "Kumasi"
+    },
+    {
+      "count": 1,
+      "term": "Lake Volta"
+    }
+  ],
+  "pack_entries_sha256": "PLACEHOLDER",
+  "pack_id": "ghana-core",
+  "redaction_preview": [
+    {
+      "context": "Visit [[LEXICON:ghana-core]], the capital city of...",
+      "original": "Accra",
+      "redacted": "[[LEXICON:ghana-core]]"
+    }
+  ],
+  "schema_version": "1.0.0",
+  "summary": {
+    "matched_terms": 7,
+    "total_entries": 30,
+    "total_occurrences": 7
+  }
+}

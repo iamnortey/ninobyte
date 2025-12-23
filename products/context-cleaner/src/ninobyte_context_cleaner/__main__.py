@@ -3,10 +3,15 @@ CLI entrypoint for ninobyte-context-cleaner.
 
 Usage:
     ninobyte-context-cleaner [OPTIONS]
+    ninobyte-context-cleaner lexicon-map [OPTIONS]
     python -m ninobyte_context_cleaner [OPTIONS]
 
 Deterministic PII redaction and text normalization for LLM context preparation.
 Reads text from STDIN (or file), writes processed output to STDOUT.
+
+Commands:
+    (default)       PII redaction and text normalization
+    lexicon-map     Generate redaction map using Lexicon Pack
 
 Exit Codes:
     0   Success
@@ -95,6 +100,10 @@ Exit Codes:
 PDF Support:
   Requires optional dependency: pip install ninobyte-context-cleaner[pdf]
   Only extracts embedded text from text-based PDFs (no OCR support).
+
+Subcommands:
+  lexicon-map    Generate redaction map using Lexicon Pack
+                 Run: ninobyte-context-cleaner lexicon-map --help
 """
 
 # Known flags (without arguments)
@@ -332,9 +341,250 @@ def read_pdf_input(path: str) -> Tuple[str, Optional[str]]:
         return "", f"PDF extraction failed: {e}"
 
 
+# ============================================================================
+# lexicon-map subcommand
+# ============================================================================
+
+LEXICON_MAP_USAGE = """\
+Usage: ninobyte-context-cleaner lexicon-map [OPTIONS]
+       python -m ninobyte_context_cleaner lexicon-map [OPTIONS]
+
+Generate a deterministic redaction map using a Lexicon Pack.
+
+Uses Lexicon Pack entries as a deterministic entity list for redaction/normalization.
+Produces a JSON report showing what would be redacted, counts, and examples.
+
+Options:
+  --help              Show this help message and exit
+  --pack <path>       Path to Lexicon Pack directory (required)
+  --input <path>      Read from file instead of STDIN
+  --output <format>   Output format: json (default)
+  --limit <n>         Maximum redaction preview examples (default: 10)
+  --fixed-time <ts>   Fixed timestamp for deterministic output (ISO 8601)
+  --apply             Include redacted text in output (default: map only)
+
+Output JSON includes:
+  schema_version      Output schema version (1.0.0)
+  generated_at_utc    Timestamp (or --fixed-time value for tests)
+  pack_id             Lexicon Pack ID
+  pack_entries_sha256 SHA256 hash of pack entries (deterministic)
+  match_strategy      Matching strategy used (casefolded_exact)
+  matches             List of matched terms with counts
+  summary             Statistics (total entries, matched, occurrences)
+  redaction_preview   Example replacements (up to --limit)
+  redacted_text       Redacted text (only with --apply)
+
+Examples:
+  # Generate map from file
+  ninobyte-context-cleaner lexicon-map \\
+    --pack products/lexicon-packs/packs/ghana-core \\
+    --input document.txt
+
+  # Generate map from stdin
+  echo "Visit Accra and Kumasi" | ninobyte-context-cleaner lexicon-map \\
+    --pack products/lexicon-packs/packs/ghana-core
+
+  # Deterministic output for tests
+  ninobyte-context-cleaner lexicon-map \\
+    --pack packs/ghana-core \\
+    --input doc.txt \\
+    --fixed-time 2025-01-01T00:00:00Z
+
+  # Include redacted text
+  ninobyte-context-cleaner lexicon-map \\
+    --pack packs/ghana-core \\
+    --input doc.txt \\
+    --apply
+
+Security:
+  - No network access
+  - No shell execution
+  - No file writes (output to stdout only)
+  - Path traversal protection on --pack and --input
+
+Exit Codes:
+  0   Success
+  2   Invalid usage (bad path, missing pack, invalid schema)
+"""
+
+# Known lexicon-map flags (without arguments)
+LEXICON_MAP_FLAGS = {"--help", "--apply"}
+
+# Known lexicon-map options (with arguments)
+LEXICON_MAP_OPTIONS = {"--pack", "--input", "--output", "--limit", "--fixed-time"}
+
+
+def parse_lexicon_map_args(args: List[str]) -> Tuple[dict, Optional[str]]:
+    """
+    Parse lexicon-map subcommand arguments.
+
+    Returns:
+        (parsed_options, error_message)
+        error_message is None on success
+    """
+    options = {
+        "pack_path": None,
+        "input_path": None,
+        "output_format": "json",
+        "limit": 10,
+        "fixed_time": None,
+        "apply": False,
+    }
+
+    i = 0
+    while i < len(args):
+        arg = args[i]
+
+        if arg in LEXICON_MAP_FLAGS:
+            if arg == "--apply":
+                options["apply"] = True
+            i += 1
+            continue
+
+        if arg in LEXICON_MAP_OPTIONS:
+            if i + 1 >= len(args):
+                return {}, f"Option '{arg}' requires a value"
+
+            value = args[i + 1]
+
+            if arg == "--pack":
+                options["pack_path"] = value
+            elif arg == "--input":
+                options["input_path"] = value
+            elif arg == "--output":
+                if value != "json":
+                    return {}, f"Invalid output format '{value}'. Use: json"
+                options["output_format"] = value
+            elif arg == "--limit":
+                try:
+                    options["limit"] = int(value)
+                    if options["limit"] < 0:
+                        return {}, "--limit must be a non-negative integer"
+                except ValueError:
+                    return {}, f"Invalid --limit value: '{value}'. Must be integer."
+            elif arg == "--fixed-time":
+                options["fixed_time"] = value
+
+            i += 2
+            continue
+
+        # Unknown argument
+        if arg.startswith("-"):
+            return {}, f"Unknown option '{arg}'"
+        else:
+            return {}, f"Unexpected argument '{arg}'"
+
+    return options, None
+
+
+def lexicon_map_main(args: List[str]) -> int:
+    """
+    Main entrypoint for lexicon-map subcommand.
+
+    Args:
+        args: Command-line arguments (after 'lexicon-map')
+
+    Returns:
+        Exit code: 0 on success, 2 on error
+    """
+    # Handle help
+    if "--help" in args:
+        print(LEXICON_MAP_USAGE)
+        return 0
+
+    # Parse arguments
+    options, error = parse_lexicon_map_args(args)
+    if error:
+        print(f"Error: {error}", file=sys.stderr)
+        print("Use 'lexicon-map --help' for usage information.", file=sys.stderr)
+        return 2
+
+    pack_path = options["pack_path"]
+    input_path = options["input_path"]
+    limit = options["limit"]
+    fixed_time = options["fixed_time"]
+    apply_flag = options["apply"]
+
+    # Validate required options
+    if not pack_path:
+        print("Error: --pack is required", file=sys.stderr)
+        print("Use 'lexicon-map --help' for usage information.", file=sys.stderr)
+        return 2
+
+    # Import lexicon_map module
+    from ninobyte_context_cleaner.lexicon_map import (
+        is_safe_pack_path,
+        generate_lexicon_map,
+        format_output_json,
+        LexiconMapError,
+    )
+
+    # Validate pack path
+    is_safe, path_error = is_safe_pack_path(pack_path)
+    if not is_safe:
+        print(f"Error: {path_error}", file=sys.stderr)
+        return 2
+
+    # Validate input path if provided
+    if input_path:
+        is_safe_input, input_error = is_safe_path(input_path)
+        if not is_safe_input:
+            print(f"Error: {input_error}", file=sys.stderr)
+            return 2
+
+    try:
+        # Read input
+        if input_path:
+            with open(input_path, 'r', encoding='utf-8') as f:
+                input_text = f.read()
+        else:
+            input_text = sys.stdin.read()
+
+        # Generate map
+        result = generate_lexicon_map(
+            pack_path=pack_path,
+            input_text=input_text,
+            fixed_time=fixed_time,
+            limit=limit,
+            apply_redaction_flag=apply_flag,
+        )
+
+        # Output
+        output = format_output_json(result)
+        sys.stdout.write(output)
+
+        return 0
+
+    except LexiconMapError as e:
+        print(f"Error: {e}", file=sys.stderr)
+        return 2
+    except KeyboardInterrupt:
+        return 130
+    except IOError as e:
+        print(f"Error: {e}", file=sys.stderr)
+        return 2
+
+
 def main() -> int:
     """
-    Main CLI entrypoint.
+    Main CLI entrypoint with subcommand dispatch.
+
+    Returns:
+        Exit code: 0 on success, 2 on invalid usage
+    """
+    args = sys.argv[1:]
+
+    # Check for subcommand
+    if args and args[0] == "lexicon-map":
+        return lexicon_map_main(args[1:])
+
+    # Otherwise, run default command
+    return default_main(args)
+
+
+def default_main(args: List[str]) -> int:
+    """
+    Default command: PII redaction and text normalization.
 
     Pipeline Order (authoritative):
     1. Read input (STDIN, file, or PDF)
@@ -346,8 +596,6 @@ def main() -> int:
     Returns:
         Exit code: 0 on success, 2 on invalid usage
     """
-    args = sys.argv[1:]
-
     # Handle info flags first (before parsing)
     if "--help" in args:
         print(USAGE)

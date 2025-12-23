@@ -6,6 +6,60 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.8.7] - 2025-12-23
+
+### Added
+
+- **ContextCleaner ↔ Lexicon Packs Integration** (`products/context-cleaner/`)
+  - New `lexicon-map` subcommand: deterministic redaction using Lexicon Packs
+  - `python -m ninobyte_context_cleaner lexicon-map --pack <path>` — Generate redaction map
+  - Loads Lexicon Pack entries as deterministic entity list
+  - Produces JSON report with match counts, examples, and statistics
+  - `--apply` flag to include redacted text in output
+  - `--fixed-time` flag for deterministic testing
+  - Case-insensitive matching with Unicode casefolding
+  - Word boundary matching (no partial word matches)
+  - Path traversal protection on `--pack` and `--input` paths
+  - Schema validation: rejects invalid pack schemas
+
+- **Lexicon Map Output Schema v1.0.0**
+  - `schema_version` — Output schema version
+  - `generated_at_utc` — Timestamp (deterministic with `--fixed-time`)
+  - `pack_id` — Lexicon Pack ID
+  - `pack_entries_sha256` — Deterministic hash of pack entries
+  - `match_strategy` — Matching strategy used (casefolded_exact)
+  - `matches` — Sorted list of matched terms with counts
+  - `summary` — Statistics (total entries, matched, occurrences)
+  - `redaction_preview` — Example replacements with context
+  - `redacted_text` — Redacted text (only with `--apply`)
+
+- **Lexicon Map Test Suite** (24 tests)
+  - Pack loading and SHA256 computation
+  - Term matching and counting
+  - Determinism (byte-for-byte stable output)
+  - Apply mode produces expected redacted text
+  - Path traversal protection
+  - Invalid pack schema rejection
+  - Invalid CSV rejection
+
+- **Documentation Updates**
+  - ContextCleaner README: `lexicon-map` command documentation
+  - Lexicon Packs README: ContextCleaner integration section
+
+### Security
+
+- No network access in lexicon-map command
+- No shell execution
+- No file writes (stdout only)
+- Path traversal protection on all paths
+- Strict schema validation
+
+### PRs Included
+
+- #XX: feat(contextcleaner): lexicon-map command (Lexicon Packs integration)
+
+---
+
 ## [0.8.6] - 2025-12-23
 
 ### Added
