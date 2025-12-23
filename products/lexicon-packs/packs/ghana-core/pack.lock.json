@@ -1,0 +1,12 @@
+{
+  "entries_file": "entries.csv",
+  "entries_file_sha256": "83fc83fbe59508941858ec8dc6bc08816a0d8ea419121598d74ba1c36700854d",
+  "entry_count": 30,
+  "fields_signature": "4c394412d093d80439fcb66f6084df319bd547b21197f6976cdb9eaa29f7e7ce",
+  "generated_at_utc": "2025-01-01T00:00:00Z",
+  "lock_schema_version": "1.0.0",
+  "normalized_entries_sha256": "183a938cd037a2080e44c0dcd2a2b703bb3622c632195e78f3be89c8367a5852",
+  "pack_id": "ghana-core",
+  "pack_json_sha256": "c86a434a4ae6b98a488466162f228c7545a6051474a16b5db2fe357fe8497c9c",
+  "pack_schema_version": "1.0.0"
+}

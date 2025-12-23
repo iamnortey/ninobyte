@@ -1480,6 +1480,26 @@ def main() -> int:
     else:
         log_info("ADR cross-link validator not found (skipping)")
 
+    # 10a. Lexicon Packs lockfile validation (v0.8.8+)
+    print("\n--- Lexicon Packs Lockfile Validation (v0.8.8) ---")
+    lockfile_validator = repo_root / 'scripts' / 'ci' / 'validate_lexicon_packs_lockfiles.py'
+    if lockfile_validator.exists():
+        import subprocess
+        result = subprocess.run(
+            [sys.executable, str(lockfile_validator)],
+            cwd=repo_root,
+            capture_output=True,
+            text=True,
+        )
+        if result.stdout:
+            print(result.stdout)
+        if result.stderr:
+            print(result.stderr, file=sys.stderr)
+        if result.returncode != 0:
+            all_passed = False
+    else:
+        log_info("Lexicon Packs lockfile validator not found (skipping)")
+
     # 10b. Evidence index enforcement (v0.5.0+)
     print("\n--- Evidence Index Validation (v0.5.0) ---")
     evidence_index_validator = repo_root / 'scripts' / 'ci' / 'validate_evidence_index.py'

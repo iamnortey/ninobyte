@@ -4,6 +4,8 @@ CLI for lexicon pack management.
 Commands:
 - validate: Validate a pack against schema
 - show: Display pack metadata and entries
+- lock: Generate lockfile for a pack
+- verify: Verify pack matches its lockfile
 """
 
 import argparse
@@ -14,6 +16,13 @@ from lexicon_packs import __version__
 from lexicon_packs.canonicalize import canonicalize_json
 from lexicon_packs.validate import validate_pack
 from lexicon_packs.load import load_pack, LoadError
+from lexicon_packs.lockfile import (
+    generate_lockfile,
+    format_lockfile_json,
+    verify_lockfile,
+    write_lockfile,
+    LockfileError,
+)
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -72,6 +81,37 @@ def main(argv: list[str] | None = None) -> int:
         help="Number of entries to include (default: 5)",
     )
 
+    # lock command
+    lock_parser = subparsers.add_parser(
+        "lock",
+        help="Generate lockfile for a pack",
+    )
+    lock_parser.add_argument(
+        "--pack",
+        required=True,
+        help="Path to pack directory",
+    )
+    lock_parser.add_argument(
+        "--write",
+        action="store_true",
+        help="Write lockfile to pack directory instead of stdout",
+    )
+    lock_parser.add_argument(
+        "--fixed-time",
+        help="Fixed UTC timestamp for deterministic output (ISO 8601)",
+    )
+
+    # verify command
+    verify_parser = subparsers.add_parser(
+        "verify",
+        help="Verify pack matches its lockfile",
+    )
+    verify_parser.add_argument(
+        "--pack",
+        required=True,
+        help="Path to pack directory",
+    )
+
     args = parser.parse_args(argv)
 
     if args.command is None:
@@ -82,6 +122,10 @@ def main(argv: list[str] | None = None) -> int:
         return cmd_validate(args)
     elif args.command == "show":
         return cmd_show(args)
+    elif args.command == "lock":
+        return cmd_lock(args)
+    elif args.command == "verify":
+        return cmd_verify(args)
 
     parser.print_help()
     return 2
@@ -132,6 +176,52 @@ def cmd_show(args: argparse.Namespace) -> int:
     # Output as canonical JSON
     print(canonicalize_json(output), end="")
     return 0
+
+
+def cmd_lock(args: argparse.Namespace) -> int:
+    """Execute the lock command."""
+    pack_path = Path(args.pack).resolve()
+
+    # Ensure pack directory exists
+    if not pack_path.is_dir():
+        print(f"Error: Pack directory not found: {pack_path}", file=sys.stderr)
+        return 2
+
+    fixed_time = getattr(args, "fixed_time", None)
+
+    try:
+        if args.write:
+            lockfile_path = write_lockfile(pack_path, fixed_time=fixed_time)
+            print(f"Lockfile written: {lockfile_path}")
+            return 0
+        else:
+            lockfile = generate_lockfile(pack_path, fixed_time=fixed_time)
+            print(format_lockfile_json(lockfile), end="")
+            return 0
+    except LockfileError as e:
+        print(f"Error: {e}", file=sys.stderr)
+        return 2
+
+
+def cmd_verify(args: argparse.Namespace) -> int:
+    """Execute the verify command."""
+    pack_path = Path(args.pack).resolve()
+
+    # Ensure pack directory exists
+    if not pack_path.is_dir():
+        print(f"Error: Pack directory not found: {pack_path}", file=sys.stderr)
+        return 2
+
+    is_valid, errors = verify_lockfile(pack_path)
+
+    if is_valid:
+        print(f"Lockfile verified: {pack_path}")
+        return 0
+    else:
+        print(f"Lockfile verification failed: {pack_path}", file=sys.stderr)
+        for error in errors:
+            print(f"  - {error}", file=sys.stderr)
+        return 2
 
 
 if __name__ == "__main__":
