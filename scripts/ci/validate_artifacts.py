@@ -1413,7 +1413,28 @@ def main() -> int:
     else:
         log_info("OpsPack source not found (skipping)")
 
-    # 9. Branch scope validation (governance hardening - strict allowlist model)
+    # 9. Validation log cross-link enforcement (v0.4.0+)
+    print("\n--- Validation Log Cross-Links (v0.4.0) ---")
+    cross_link_validator = repo_root / 'scripts' / 'ci' / 'validate_validation_log_links.py'
+    if cross_link_validator.exists():
+        import subprocess
+        result = subprocess.run(
+            [sys.executable, str(cross_link_validator)],
+            cwd=repo_root,
+            capture_output=True,
+            text=True,
+        )
+        # Print output (already formatted by the validator)
+        if result.stdout:
+            print(result.stdout)
+        if result.stderr:
+            print(result.stderr, file=sys.stderr)
+        if result.returncode != 0:
+            all_passed = False
+    else:
+        log_info("Validation log cross-link validator not found (skipping)")
+
+    # 10. Branch scope validation (governance hardening - strict allowlist model)
     print("\n--- Branch Scope Validation (Governance) ---")
     branch_name = get_branch_name()
     if branch_name and branch_name != "main":

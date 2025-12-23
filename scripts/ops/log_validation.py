@@ -14,11 +14,22 @@ Usage:
         --notes "Phase 4B validation log automation" \\
         --verify
 
+    # Add receipt only (skip VALIDATION_LOG.md update)
+    python3 log_validation.py add \\
+        --claim "Draft decision" \\
+        --source "internal discussion" \\
+        --status unverified \\
+        --confidence low \\
+        --receipt-only
+
     # List recent entries
     python3 log_validation.py list --limit 10
 
     # Lint the validation log
     python3 log_validation.py lint
+
+    # Lint with cross-link validation
+    python3 log_validation.py lint --strict
 """
 
 import argparse
@@ -36,6 +47,7 @@ REPO_ROOT = SCRIPT_DIR.parent.parent
 EVIDENCE_DIR = REPO_ROOT / "ops" / "evidence" / "validation"
 VALIDATION_LOG = REPO_ROOT / "docs" / "canonical" / "VALIDATION_LOG.md"
 VALIDATOR_SCRIPT = REPO_ROOT / "scripts" / "ci" / "validate_evidence_integrity.py"
+CROSS_LINK_VALIDATOR = REPO_ROOT / "scripts" / "ci" / "validate_validation_log_links.py"
 
 # Valid enum values
 VALID_STATUSES = {"verified", "partially_verified", "disputed", "unverified"}
@@ -217,6 +229,26 @@ def run_validator() -> bool:
     return result.returncode == 0
 
 
+def run_cross_link_validator() -> bool:
+    """Run the validation log cross-link validator. Returns True if passed."""
+    print()
+    print("=" * 60)
+    print("Running Cross-Link Validator...")
+    print("=" * 60)
+
+    if not CROSS_LINK_VALIDATOR.exists():
+        print(f"Cross-link validator not found: {CROSS_LINK_VALIDATOR}")
+        return False
+
+    result = subprocess.run(
+        [sys.executable, str(CROSS_LINK_VALIDATOR)],
+        cwd=REPO_ROOT,
+        check=False,
+    )
+
+    return result.returncode == 0
+
+
 def cmd_add(args: argparse.Namespace) -> int:
     """Handle the 'add' subcommand."""
     # Validate inputs
@@ -257,7 +289,7 @@ def cmd_add(args: argparse.Namespace) -> int:
     # Repo-relative path for display/log
     receipt_path = f"ops/evidence/validation/{receipt_id}.canonical.json"
 
-    mode_label = "[DRY RUN] " if args.dry_run else ""
+    mode_label = "[DRY RUN] " if args.dry_run else ("[RECEIPT ONLY] " if args.receipt_only else "")
     print("=" * 60)
     print(f"{mode_label}Validation Log Entry")
     print("=" * 60)
@@ -277,7 +309,8 @@ def cmd_add(args: argparse.Namespace) -> int:
         print(f"  ops/evidence/validation/{receipt_id}.json")
         print(f"  ops/evidence/validation/{receipt_id}.canonical.json")
         print(f"  ops/evidence/validation/{receipt_id}.canonical.json.sha256")
-        print(f"  docs/canonical/VALIDATION_LOG.md (append row)")
+        if not args.receipt_only:
+            print(f"  docs/canonical/VALIDATION_LOG.md (append row)")
         print()
         print("=" * 60)
         print("DRY RUN complete. No files were modified.")
@@ -303,18 +336,23 @@ def cmd_add(args: argparse.Namespace) -> int:
     print()
     print(f"SHA256: {sha256_hash}")
 
-    # Append to validation log
-    append_log_entry(
-        timestamp=timestamp,
-        claim=claim,
-        status=status,
-        confidence=confidence,
-        source=source,
-        receipt_path=receipt_path,
-    )
-    print()
-    print(f"Log updated: docs/canonical/VALIDATION_LOG.md")
-    print("=" * 60)
+    # Append to validation log (unless --receipt-only)
+    if args.receipt_only:
+        print()
+        print("Skipping VALIDATION_LOG.md update (--receipt-only mode)")
+        print("=" * 60)
+    else:
+        append_log_entry(
+            timestamp=timestamp,
+            claim=claim,
+            status=status,
+            confidence=confidence,
+            source=source,
+            receipt_path=receipt_path,
+        )
+        print()
+        print(f"Log updated: docs/canonical/VALIDATION_LOG.md")
+        print("=" * 60)
 
     # Run verification if requested
     if args.verify:
@@ -430,6 +468,14 @@ def cmd_lint(args: argparse.Namespace) -> int:
         return 1
 
     print("PASSED: Validation log is well-formed")
+
+    # In strict mode, also run cross-link validation
+    if args.strict:
+        if not run_cross_link_validator():
+            print("\n❌ Strict mode: Cross-link validation FAILED")
+            return 1
+        print("\n✅ Strict mode: Cross-link validation PASSED")
+
     return 0
 
 
@@ -459,6 +505,7 @@ def main() -> int:
     add_parser.add_argument("--tags", help="Comma-separated tags")
     add_parser.add_argument("--notes", default="", help="Additional notes")
     add_parser.add_argument("--dry-run", action="store_true", help="Preview without writing")
+    add_parser.add_argument("--receipt-only", action="store_true", help="Generate receipt but skip VALIDATION_LOG.md update")
     add_parser.add_argument("--verify", action="store_true", help="Run integrity validator after")
 
     # 'list' subcommand
@@ -466,7 +513,8 @@ def main() -> int:
     list_parser.add_argument("--limit", type=int, default=10, help="Number of entries to show")
 
     # 'lint' subcommand
-    subparsers.add_parser("lint", help="Lint the validation log for format errors")
+    lint_parser = subparsers.add_parser("lint", help="Lint the validation log for format errors")
+    lint_parser.add_argument("--strict", action="store_true", help="Also run cross-link validation")
 
     args = parser.parse_args()
 
