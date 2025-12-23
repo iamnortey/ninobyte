@@ -74,6 +74,9 @@ build/
 # Logs
 logs/
 *.log
+# Allowlist: CI evidence logs (immutable audit trail)
+!ops/evidence/ci/*.log
+!ops/evidence/ci/*.log.sha256
 
 # Temporary files
 tmp/
