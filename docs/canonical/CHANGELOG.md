@@ -6,6 +6,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.9.0] - Unreleased
+
+### Added
+
+- **NetOpsPack MVP** (`products/netopspack/`)
+  - Network operations toolkit for SRE/DevOps incident triage
+  - Contract-first documentation with security constraints
+  - CLI scaffold: `python -m netopspack diagnose`
+  - Parser stubs: syslog, nginx, haproxy
+  - Redaction module with IP, token, email patterns
+  - Security policy: no network, no shell, no file writes
+  - Deterministic output contract with `--fixed-time` flag
+
+---
+
 ## [0.8.9] - 2025-12-23
 
 ### Added
