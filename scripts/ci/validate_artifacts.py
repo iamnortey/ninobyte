@@ -1297,6 +1297,31 @@ def main() -> int:
     all_passed = True
     strict_mode = args.strict
 
+    # 0. OS artifact check (fail-fast before expensive validations)
+    print("\n--- OS Artifact Check (Fail-Fast) ---")
+    os_artifact_validator = repo_root / 'scripts' / 'ci' / 'validate_no_os_artifacts.py'
+    if os_artifact_validator.exists():
+        import subprocess
+        result = subprocess.run(
+            [sys.executable, str(os_artifact_validator)],
+            cwd=repo_root,
+            capture_output=True,
+            text=True,
+        )
+        if result.stdout:
+            print(result.stdout)
+        if result.stderr:
+            print(result.stderr, file=sys.stderr)
+        if result.returncode != 0:
+            all_passed = False
+            # Fail fast: don't proceed with other validations
+            print("\n" + "=" * 60)
+            print("ABORTED: Fix OS artifacts before running full validation")
+            print("=" * 60)
+            return 1
+    else:
+        log_info("OS artifact validator not found (skipping)")
+
     # 1. Validate marketplace
     print("\n--- Marketplace Validation ---")
     marketplace_path = repo_root / '.claude-plugin' / 'marketplace.json'
