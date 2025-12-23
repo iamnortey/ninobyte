@@ -71,8 +71,22 @@ class TestRedactLine:
         """AWS access keys are redacted."""
         line = "AWS key: AKIAIOSFODNN7EXAMPLE"
         result = redact_line(line)
-        assert "[REDACTED_AWS]" in result
+        assert "[REDACTED_AWS_KEY]" in result
         assert "AKIAIOSFODNN7EXAMPLE" not in result
+
+    def test_redact_aws_sts_key(self):
+        """AWS STS (temporary) access keys are redacted."""
+        line = "AWS STS key: ASIAXXXXXXXXXEXAMPLE"
+        result = redact_line(line)
+        assert "[REDACTED_AWS_KEY]" in result
+        assert "ASIAXXXXXXXXXEXAMPLE" not in result
+
+    def test_redact_jwt_token(self):
+        """JWT tokens are redacted."""
+        line = "Token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.dozjgNryP4J3jVmNHl0w5N_XgL0n3I9PlFUP0THsR8U"
+        result = redact_line(line)
+        assert "[REDACTED_TOKEN]" in result
+        assert "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9" not in result
 
     def test_redact_long_hex(self):
         """Long hex strings are redacted."""
@@ -195,7 +209,7 @@ class TestCLIRedaction:
 
         output_str = json.dumps(report)
         # Original IPs should not appear
-        assert "192.168.1.1" not in output_str
+        assert "203.0.113.10" not in output_str
         assert "10.0.0.50" not in output_str
         # Redacted placeholder should appear
         assert "[REDACTED_IP]" in output_str
@@ -207,5 +221,5 @@ class TestCLIRedaction:
         report = json.loads(output)
 
         output_str = json.dumps(report)
-        assert "192.168.1.1" not in output_str
+        assert "203.0.113.10" not in output_str
         assert "[REDACTED_IP]" in output_str

@@ -1,0 +1,5 @@
+Dec 23 14:30:45 myhost app[1234]: Connection from 192.168.1.100 with token Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9
+Dec 23 14:30:46 myhost app[1234]: User login: user@example.com with api_key=sk_live_abc123xyz789
+Dec 23 14:30:47 myhost app[1234]: AWS access key AKIAIOSFODNN7EXAMPLE detected
+Dec 23 14:30:48 myhost app[1234]: Request from 2001:db8::1 processed
+Dec 23 14:30:49 myhost app[1234]: Session token 0123456789abcdef0123456789abcdef validated

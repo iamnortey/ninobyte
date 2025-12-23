@@ -66,16 +66,19 @@ def main(argv: list[str] | None = None) -> int:
         default=50,
         help="Maximum number of events to include (default: 50)",
     )
-    diagnose_parser.add_argument(
+    # Redaction: mutually exclusive flags
+    redact_group = diagnose_parser.add_mutually_exclusive_group()
+    redact_group.add_argument(
         "--redact",
         action="store_true",
-        default=True,
+        dest="redact_explicit",
         help="Apply redaction to sensitive data (default: enabled)",
     )
-    diagnose_parser.add_argument(
+    redact_group.add_argument(
         "--no-redact",
         action="store_true",
-        help="Disable redaction",
+        dest="no_redact",
+        help="Disable redaction (explicit opt-out)",
     )
 
     args = parser.parse_args(argv)
@@ -97,8 +100,9 @@ def cmd_diagnose(args: argparse.Namespace) -> int:
 
     Analyzes a log file and outputs a deterministic JSON report.
     """
-    # Determine redaction setting
-    redact = not args.no_redact
+    # Determine redaction setting:
+    # Default is ON, --no-redact explicitly disables, --redact explicitly enables (same as default)
+    redact = not getattr(args, "no_redact", False)
 
     try:
         report = diagnose_file(

@@ -102,7 +102,7 @@ class TestSyslogParser:
         lines = (fixtures_dir / "sample_syslog.log").read_text().splitlines()
         events = parser.parse_lines(lines)
 
-        assert len(events) == 8
+        assert len(events) == 10
         # Check specific events
         assert events[0]["program"] == "sshd"
         assert events[2]["severity"] == "error"  # "refused" keyword
@@ -196,7 +196,7 @@ class TestNginxParser:
         lines = (fixtures_dir / "sample_nginx.log").read_text().splitlines()
         events = parser.parse_lines(lines)
 
-        assert len(events) == 8
+        assert len(events) == 10
         # Check status distribution
         statuses = [e["status"] for e in events]
         assert 200 in statuses
@@ -275,7 +275,7 @@ class TestHaproxyParser:
         lines = (fixtures_dir / "sample_haproxy.log").read_text().splitlines()
         events = parser.parse_lines(lines)
 
-        assert len(events) == 5
+        assert len(events) == 8
         # Check specific events
         assert events[0]["frontend"] == "http-in"
         assert events[1]["status"] == 500

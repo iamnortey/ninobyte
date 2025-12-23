@@ -155,9 +155,9 @@ class TestSignalAggregation:
         input_path = fixtures_dir / "sample_syslog.log"
         report = self._run_diagnose(netopspack_dir, input_path, "syslog")
 
-        # 8 lines in fixture
-        assert report["line_count"] == 8
-        assert report["event_count"] == 8
+        # 10 lines in fixture (after adding sensitive data lines)
+        assert report["line_count"] == 10
+        assert report["event_count"] == 10
 
     def test_limit_restricts_events(self, fixtures_dir: Path, netopspack_dir: Path):
         """--limit restricts number of events in output."""
@@ -191,7 +191,7 @@ class TestSignalAggregation:
         assert result.returncode == 0
         report = json.loads(result.stdout)
 
-        # 8 lines in fixture, but limit is 3
-        assert report["event_count"] == 8
+        # 10 lines in fixture (after adding sensitive data lines), but limit is 3
+        assert report["event_count"] == 10
         assert len(report["events"]) == 3
         assert report["limit"] == 3
