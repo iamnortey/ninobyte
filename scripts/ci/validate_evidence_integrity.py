@@ -1,17 +1,25 @@
 #!/usr/bin/env python3
 """Validate integrity of canonical evidence files.
 
-Finds all *.canonical.json files under ops/evidence/ and verifies:
-1. Sibling .sha256 file exists
-2. Stored hash matches computed SHA256
-3. Stored path matches actual repo-relative path
+Performs two categories of checks:
+
+1. Canonical Validation (existing):
+   - Find all *.canonical.json files under ops/evidence/
+   - For each, verify sibling .sha256 file exists
+   - Verify stored hash matches computed SHA256
+   - Verify stored path matches actual repo-relative path
+
+2. Orphan Check (new):
+   - Find all *.sha256 files under ops/evidence/
+   - For each, verify the referenced target file exists
+   - Orphan = checksum file pointing to non-existent target
 
 Usage:
     python scripts/ci/validate_evidence_integrity.py
 
 Exit codes:
     0 - All checks passed
-    1 - One or more checks failed
+    1 - One or more checks failed (integrity or orphan)
 """
 
 import hashlib
@@ -90,6 +98,43 @@ def validate_evidence_file(canonical_path: Path) -> list[str]:
     return errors
 
 
+def check_for_orphans() -> list[str]:
+    """Find orphan .sha256 files whose targets don't exist.
+
+    Returns list of orphan error messages.
+    """
+    orphans = []
+
+    if not EVIDENCE_ROOT.exists():
+        return orphans
+
+    # Find all .sha256 files
+    sha256_files = list(EVIDENCE_ROOT.rglob("*.sha256"))
+
+    for sha256_path in sha256_files:
+        try:
+            _, stored_path = parse_sha256_file(sha256_path)
+        except ValueError:
+            # Invalid format - will be caught by canonical validation
+            continue
+
+        # Check if target exists (stored_path is repo-relative)
+        target_path = Path(stored_path)
+
+        # Handle both repo-relative and basename-only paths
+        if not target_path.is_absolute():
+            # Repo-relative path
+            if not target_path.exists():
+                # Try as basename in same directory
+                basename_path = sha256_path.parent / target_path.name
+                if not basename_path.exists():
+                    orphans.append(
+                        f"Orphan checksum found: {sha256_path} -> {stored_path}"
+                    )
+
+    return orphans
+
+
 def main() -> int:
     print("=" * 60)
     print("Evidence Integrity Validator")
@@ -101,39 +146,65 @@ def main() -> int:
         print("=" * 60)
         return 0
 
-    # Find all canonical.json files
+    all_errors = []
+    orphan_errors = []
+
+    # === Phase 1: Canonical Validation ===
+    print("\n--- Canonical File Validation ---")
+
     canonical_files = list(EVIDENCE_ROOT.rglob("*.canonical.json"))
 
     if not canonical_files:
         print(f"No *.canonical.json files found in {EVIDENCE_ROOT}")
-        print("=" * 60)
-        return 0
+    else:
+        print(f"Found {len(canonical_files)} canonical evidence file(s)\n")
 
-    print(f"Found {len(canonical_files)} canonical evidence file(s)\n")
+        passed = 0
+        failed = 0
 
-    all_errors = []
-    passed = 0
-    failed = 0
+        for canonical_path in sorted(canonical_files):
+            print(f"Checking: {canonical_path}")
+            errors = validate_evidence_file(canonical_path)
 
-    for canonical_path in sorted(canonical_files):
-        print(f"Checking: {canonical_path}")
-        errors = validate_evidence_file(canonical_path)
+            if errors:
+                failed += 1
+                for error in errors:
+                    print(f"  ❌ {error}")
+                    all_errors.append(error)
+            else:
+                passed += 1
+                print(f"  ✅ Integrity verified")
 
-        if errors:
-            failed += 1
-            for error in errors:
-                print(f"  ❌ {error}")
-                all_errors.append(error)
-        else:
-            passed += 1
-            print(f"  ✅ Integrity verified")
+        print(f"\nCanonical validation: {passed} passed, {failed} failed")
 
+    # === Phase 2: Orphan Check ===
+    print("\n--- Orphan Checksum Detection ---")
+
+    orphan_errors = check_for_orphans()
+
+    if orphan_errors:
+        print(f"Found {len(orphan_errors)} orphan checksum file(s):\n")
+        for orphan in orphan_errors:
+            print(f"  ❌ {orphan}")
+    else:
+        sha256_count = len(list(EVIDENCE_ROOT.rglob("*.sha256")))
+        print(f"✅ No orphans found ({sha256_count} checksum file(s) validated)")
+
+    # === Summary ===
     print()
     print("=" * 60)
-    print(f"Results: {passed} passed, {failed} failed")
+    print("Summary")
     print("=" * 60)
 
-    if all_errors:
+    total_canonical = len(canonical_files) if canonical_files else 0
+    total_errors = len(all_errors) + len(orphan_errors)
+
+    print(f"  Canonical files validated: {total_canonical}")
+    print(f"  Integrity errors:          {len(all_errors)}")
+    print(f"  Orphan checksums:          {len(orphan_errors)}")
+    print("=" * 60)
+
+    if total_errors > 0:
         print("\nFAILED: Evidence integrity check found errors.")
         return 1
 
