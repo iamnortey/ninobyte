@@ -1,0 +1,12 @@
+{
+  "baseRefName": "main",
+  "headRefName": "chore/contextcleaner-v0.8.5-release-surface",
+  "mergeCommit": {
+    "oid": "9a688833fc3d1e2c4602d581c5d990fc5395bb62"
+  },
+  "mergedAt": "2025-12-23T05:02:53Z",
+  "number": 60,
+  "state": "MERGED",
+  "title": "chore(contextcleaner): v0.8.5 release surface (contract + docs)",
+  "url": "https://github.com/iamnortey/ninobyte/pull/60"
+}
