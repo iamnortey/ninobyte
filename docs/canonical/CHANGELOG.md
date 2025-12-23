@@ -6,6 +6,40 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.8.6] - 2025-12-23
+
+### Added
+
+- **Lexicon Packs MVP** (`products/lexicon-packs/`)
+  - New product: Deterministic vocabulary pack validation and loading
+  - Pack schema v1.0.0 with strict validation (unknown keys rejected)
+  - `python -m lexicon_packs validate` — Validate pack against schema
+  - `python -m lexicon_packs show` — Display pack metadata with deterministic JSON
+  - Canonical JSON output with sorted keys, SHA256 hashing
+  - Path traversal protection on all file operations
+
+- **Ghana Core Pack** (`packs/ghana-core/`)
+  - First real pack: 30 entries (15 cities, 10 regions, 5 landmarks)
+  - CC0-1.0 licensed, public domain geographic data
+  - Language: en-GH (English - Ghana)
+
+- **Lexicon Packs Test Suite**
+  - 38 tests across 3 modules
+  - `test_validate_pack.py` — Schema and CSV validation (14 tests)
+  - `test_load_pack.py` — Pack loading and entry structure (11 tests)
+  - `test_determinism.py` — Byte-for-byte output stability (13 tests)
+
+- **Lexicon Packs Security**
+  - `SECURITY.md` — Security policy with contributor guidelines
+  - "What Lexicon Packs is NOT" section in README
+  - No network, no shell, no file writes, pure stdlib
+
+### PRs Included
+
+- #62: Lexicon Packs MVP (schema + validator + loader + ghana-core pack)
+
+---
+
 ## [0.8.5] - 2025-12-23
 
 ### Added
