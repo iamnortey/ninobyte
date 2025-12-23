@@ -183,6 +183,28 @@ echo "Visit NYC" | python -m ninobyte_context_cleaner --lexicon lexicon.json --o
 cat data.csv | python -m ninobyte_context_cleaner --normalize-tables --lexicon lexicon.json --lexicon-target normalized
 ```
 
+## Commands
+
+ContextCleaner provides two commands:
+
+### Default Command (PII Redaction)
+
+```bash
+ninobyte-context-cleaner [OPTIONS]
+```
+
+Standard PII redaction and text normalization.
+
+### lexicon-map Command (Lexicon Pack Integration)
+
+```bash
+ninobyte-context-cleaner lexicon-map [OPTIONS]
+```
+
+Generate a deterministic redaction map using a Lexicon Pack. This bridges Lexicon Packs into operational value by using pack entries as a deterministic entity list for redaction analysis.
+
+See [Lexicon Map Command](#lexicon-map-command) section for details.
+
 ## CLI Options
 
 | Option | Description |
@@ -384,6 +406,103 @@ input read → table normalize → lexicon injection → PII redaction → outpu
 - No file system writes
 - Path traversal protection (rejects `..` segments)
 - Pure Python stdlib for core (optional pypdf for PDF)
+
+## Lexicon Map Command
+
+The `lexicon-map` command integrates with [Lexicon Packs](../lexicon-packs/) to provide deterministic entity detection and redaction mapping.
+
+### What It Does
+
+- Loads a Lexicon Pack (local path only)
+- Builds an in-memory match set from pack entries
+- Produces a deterministic redaction map (JSON output)
+- Optionally applies redaction to input text (with `--apply`)
+
+### What It Does NOT Do
+
+- No file writes (output to stdout only)
+- No network access
+- No shell execution
+- No fuzzy matching (exact word boundaries only)
+
+### Usage
+
+```bash
+# Generate redaction map from stdin
+echo "Visit Accra and Kumasi" | ninobyte-context-cleaner lexicon-map \
+  --pack products/lexicon-packs/packs/ghana-core
+
+# Generate map from file
+ninobyte-context-cleaner lexicon-map \
+  --pack products/lexicon-packs/packs/ghana-core \
+  --input document.txt
+
+# Include redacted text output
+ninobyte-context-cleaner lexicon-map \
+  --pack products/lexicon-packs/packs/ghana-core \
+  --input document.txt \
+  --apply
+
+# Deterministic output for testing
+ninobyte-context-cleaner lexicon-map \
+  --pack products/lexicon-packs/packs/ghana-core \
+  --input document.txt \
+  --fixed-time 2025-01-01T00:00:00Z
+```
+
+### lexicon-map Options
+
+| Option | Description |
+|--------|-------------|
+| `--pack <path>` | Path to Lexicon Pack directory (required) |
+| `--input <path>` | Read from file instead of STDIN |
+| `--output <format>` | Output format: `json` (default) |
+| `--limit <n>` | Maximum preview examples (default: 10) |
+| `--fixed-time <ts>` | Fixed timestamp for deterministic output (ISO 8601) |
+| `--apply` | Include redacted text in output |
+
+### Output Schema (v1.0.0)
+
+```json
+{
+  "schema_version": "1.0.0",
+  "generated_at_utc": "2025-01-01T00:00:00Z",
+  "pack_id": "ghana-core",
+  "pack_entries_sha256": "406aed33...",
+  "match_strategy": "casefolded_exact",
+  "matches": [
+    {"term": "Accra", "count": 2},
+    {"term": "Kumasi", "count": 1}
+  ],
+  "summary": {
+    "total_entries": 30,
+    "matched_terms": 2,
+    "total_occurrences": 3
+  },
+  "redaction_preview": [
+    {
+      "original": "Accra",
+      "redacted": "[[LEXICON:ghana-core]]",
+      "context": "...Visit Accra today..."
+    }
+  ],
+  "redacted_text": "..."  // Only with --apply
+}
+```
+
+### Matching Strategy
+
+- **Case-insensitive**: Uses Unicode casefolding for matching
+- **Word boundaries**: Only matches complete words (no partial matches)
+- **Deterministic**: Same input always produces same output
+- **Sorted output**: Matches sorted alphabetically for stability
+
+### Security Posture
+
+- **Path traversal protection**: `--pack` and `--input` paths validated
+- **No network**: Completely offline operation
+- **No writes**: Output to stdout only
+- **Schema validation**: Rejects invalid pack schemas
 
 ## Trust & Governance
 
