@@ -1455,6 +1455,27 @@ def main() -> int:
     else:
         log_info("ADR cross-link validator not found (skipping)")
 
+    # 10b. Evidence index enforcement (v0.5.0+)
+    print("\n--- Evidence Index Validation (v0.5.0) ---")
+    evidence_index_validator = repo_root / 'scripts' / 'ci' / 'validate_evidence_index.py'
+    if evidence_index_validator.exists():
+        import subprocess
+        result = subprocess.run(
+            [sys.executable, str(evidence_index_validator)],
+            cwd=repo_root,
+            capture_output=True,
+            text=True,
+        )
+        # Print output (already formatted by the validator)
+        if result.stdout:
+            print(result.stdout)
+        if result.stderr:
+            print(result.stderr, file=sys.stderr)
+        if result.returncode != 0:
+            all_passed = False
+    else:
+        log_info("Evidence index validator not found (skipping)")
+
     # 11. Branch scope validation (governance hardening - strict allowlist model)
     print("\n--- Branch Scope Validation (Governance) ---")
     branch_name = get_branch_name()
