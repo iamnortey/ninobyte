@@ -6,6 +6,8 @@ Commands:
 - show: Display pack metadata and entries
 - lock: Generate lockfile for a pack
 - verify: Verify pack matches its lockfile
+- discover: Discover packs in a directory
+- verify-all: Verify all packs in a directory
 """
 
 import argparse
@@ -22,6 +24,13 @@ from lexicon_packs.lockfile import (
     verify_lockfile,
     write_lockfile,
     LockfileError,
+)
+from lexicon_packs.discover import (
+    discover_packs,
+    discover_packs_with_info,
+    format_discovery_json,
+    verify_all_packs,
+    DiscoveryError,
 )
 
 
@@ -112,6 +121,36 @@ def main(argv: list[str] | None = None) -> int:
         help="Path to pack directory",
     )
 
+    # discover command
+    discover_parser = subparsers.add_parser(
+        "discover",
+        help="Discover packs in a directory",
+    )
+    discover_parser.add_argument(
+        "--root",
+        help="Root directory to search (default: packs/)",
+    )
+    discover_parser.add_argument(
+        "--output",
+        choices=["json"],
+        default="json",
+        help="Output format (default: json)",
+    )
+    discover_parser.add_argument(
+        "--fixed-time",
+        help="Fixed UTC timestamp for deterministic output (ISO 8601)",
+    )
+
+    # verify-all command
+    verify_all_parser = subparsers.add_parser(
+        "verify-all",
+        help="Verify all packs in a directory",
+    )
+    verify_all_parser.add_argument(
+        "--root",
+        help="Root directory to search (default: packs/)",
+    )
+
     args = parser.parse_args(argv)
 
     if args.command is None:
@@ -126,6 +165,10 @@ def main(argv: list[str] | None = None) -> int:
         return cmd_lock(args)
     elif args.command == "verify":
         return cmd_verify(args)
+    elif args.command == "discover":
+        return cmd_discover(args)
+    elif args.command == "verify-all":
+        return cmd_verify_all(args)
 
     parser.print_help()
     return 2
@@ -221,6 +264,92 @@ def cmd_verify(args: argparse.Namespace) -> int:
         print(f"Lockfile verification failed: {pack_path}", file=sys.stderr)
         for error in errors:
             print(f"  - {error}", file=sys.stderr)
+        return 2
+
+
+def cmd_discover(args: argparse.Namespace) -> int:
+    """Execute the discover command."""
+    # Determine root directory
+    if args.root:
+        root = Path(args.root).resolve()
+    else:
+        # Default to packs/ relative to current directory
+        root = Path.cwd() / "packs"
+
+    # Validate root exists
+    if not root.exists():
+        print(f"Error: Root directory not found: {root}", file=sys.stderr)
+        return 2
+
+    if not root.is_dir():
+        print(f"Error: Root is not a directory: {root}", file=sys.stderr)
+        return 2
+
+    fixed_time = getattr(args, "fixed_time", None)
+
+    try:
+        packs = discover_packs_with_info(root, relative_to=root)
+    except DiscoveryError as e:
+        print(f"Error: {e}", file=sys.stderr)
+        return 2
+
+    # Check for packs with errors
+    has_errors = any(p.error is not None for p in packs)
+
+    # Output JSON
+    print(format_discovery_json(packs, fixed_time=fixed_time), end="")
+
+    # Return 2 if any packs have errors
+    return 2 if has_errors else 0
+
+
+def cmd_verify_all(args: argparse.Namespace) -> int:
+    """Execute the verify-all command."""
+    # Determine root directory
+    if args.root:
+        root = Path(args.root).resolve()
+    else:
+        # Default to packs/ relative to current directory
+        root = Path.cwd() / "packs"
+
+    # Validate root exists
+    if not root.exists():
+        print(f"Error: Root directory not found: {root}", file=sys.stderr)
+        return 2
+
+    if not root.is_dir():
+        print(f"Error: Root is not a directory: {root}", file=sys.stderr)
+        return 2
+
+    try:
+        all_valid, results = verify_all_packs(root, fail_fast=True)
+    except DiscoveryError as e:
+        print(f"Error: {e}", file=sys.stderr)
+        return 2
+
+    if not results:
+        print("No packs found to verify")
+        return 0
+
+    # Print results
+    for result in results:
+        if result.valid:
+            print(f"  {result.pack_id}: verified")
+        else:
+            print(f"  {result.pack_id}: FAILED", file=sys.stderr)
+            for error in result.errors:
+                print(f"    - {error}", file=sys.stderr)
+
+    # Summary
+    verified_count = sum(1 for r in results if r.valid)
+    failed_count = sum(1 for r in results if not r.valid)
+
+    print()
+    if all_valid:
+        print(f"Verified {verified_count} pack(s)")
+        return 0
+    else:
+        print(f"Verification failed: {failed_count} pack(s) failed, {verified_count} passed", file=sys.stderr)
         return 2
 
 
