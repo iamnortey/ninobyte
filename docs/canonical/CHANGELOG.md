@@ -6,6 +6,41 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.8.9] - 2025-12-23
+
+### Added
+
+- **Lexicon Packs Fleet Governance** (`products/lexicon-packs/`)
+  - Pack discovery API for multi-pack management at scale
+  - `discover_packs(root)` — Find all packs under a directory (sorted deterministically)
+  - `discover_packs_with_info(root)` — Gather metadata for each discovered pack
+  - `verify_all_packs(root)` — Verify lockfiles across entire fleet (fail-fast option)
+  - `python -m lexicon_packs discover --root <path>` — Output pack catalog as JSON
+  - `python -m lexicon_packs verify-all --root <path>` — Verify all packs
+  - `--fixed-time` flag for deterministic discovery output
+  - CI gate updated to use discovery API instead of hardcoded patterns
+
+- **Ghana Schools Core Pack** (`packs/ghana-schools-core/`)
+  - Second real pack: 30 entries (10 universities, 10 polytechnics, 10 secondary schools)
+  - CC0-1.0 licensed, public domain educational data
+  - Language: en-GH (English - Ghana)
+  - Lockfile generated with fixed timestamp `2025-01-01T00:00:00Z`
+
+- **Fleet Discovery Test Suite** (33 tests)
+  - Discovery root validation
+  - Single/multiple/nested pack discovery
+  - Deterministic sorting
+  - Metadata extraction (pack_id, entry_count, has_lockfile)
+  - Fleet verification with fail-fast
+  - CLI discover and verify-all commands
+  - Real packs integration tests
+
+### PRs Included
+
+- #68: feat(lexicon-packs): pack discovery + verify-all + multi-pack CI
+
+---
+
 ## [0.8.8] - 2025-12-23
 
 ### Added

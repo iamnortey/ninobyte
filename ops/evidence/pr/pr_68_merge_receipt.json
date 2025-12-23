@@ -1,0 +1,12 @@
+{
+  "baseRefName": "main",
+  "headRefName": "feat/lexicon-packs-pack-fleet",
+  "mergeCommit": {
+    "oid": "7c768aa9f32611d6ff8c977ab3d944b360e2511d"
+  },
+  "mergedAt": "2025-12-23T06:58:42Z",
+  "number": 68,
+  "state": "MERGED",
+  "title": "feat(lexicon-packs): pack discovery + verify-all + multi-pack CI",
+  "url": "https://github.com/iamnortey/ninobyte/pull/68"
+}

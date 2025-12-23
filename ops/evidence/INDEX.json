@@ -1,10 +1,10 @@
 {
   "counts": {
     "decision": 1,
-    "pr": 19,
+    "pr": 20,
     "validation": 1
   },
-  "generated_at_utc": "2025-12-23T06:41:59Z",
+  "generated_at_utc": "2025-12-23T06:58:42Z",
   "items": [
     {
       "canonical_path": "ops/evidence/decisions/decision_20251223_025526_7328a31.canonical.json",
@@ -205,6 +205,16 @@
       "sort_timestamp_utc": "2025-12-23T06:41:59Z",
       "source_ref": "https://github.com/iamnortey/ninobyte/pull/66",
       "timestamp_utc": "2025-12-23T06:41:59Z"
+    },
+    {
+      "canonical_path": "ops/evidence/pr/pr_68_merge_receipt.canonical.json",
+      "id": "pr_68_merge_receipt",
+      "kind": "pr",
+      "sha256": "405695df3a2a9a396990149a744479872d04a73135c089c5e99dce58a936cffa",
+      "sha256_path": "ops/evidence/pr/pr_68_merge_receipt.canonical.json.sha256",
+      "sort_timestamp_utc": "2025-12-23T06:58:42Z",
+      "source_ref": "https://github.com/iamnortey/ninobyte/pull/68",
+      "timestamp_utc": "2025-12-23T06:58:42Z"
     },
     {
       "canonical_path": "ops/evidence/validation/validation_20251223_015916_2e080e8.canonical.json",
