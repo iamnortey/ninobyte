@@ -1,104 +1,22 @@
 # Ninobyte OpsPack
 
 **Version**: 0.1.0
-**Status**: MVP - `incident-triage` command implemented
+**Status**: MVP — `triage` command implemented
+
+---
 
 ## What is OpsPack?
 
-Ninobyte OpsPack is a read-only operational intelligence module designed to collect, validate, and package evidence from infrastructure and application systems. It operates under strict security constraints aligned with the AirGap philosophy: no network calls, no shell execution, no filesystem writes, and deny-by-default access controls.
+OpsPack is a deterministic incident triage and log analysis toolkit. It extracts signals from noisy logs, applies automatic redaction of sensitive data, and produces structured, reproducible JSON reports.
 
-## Quick Start
+### Core Principles
 
-### Installation
+1. **Determinism**: Same input always produces byte-for-byte identical output
+2. **Security by default**: Sensitive data is redacted automatically
+3. **Local-only**: No network calls, no external dependencies at runtime
+4. **Cross-platform**: Works on Linux, macOS, and Windows
 
-OpsPack is a standard Python package. From the repository root:
-
-```bash
-# Recommended: use the wrapper script
-scripts/bin/opspack --help
-
-# Alternative: run directly with Python (requires PYTHONPATH)
-cd products/opspack
-PYTHONPATH=src python -m ninobyte_opspack --help
-```
-
-### Usage: incident-triage
-
-The `incident-triage` command analyzes an incident snapshot and produces a deterministic triage summary.
-
-```bash
-# Using the wrapper script (recommended)
-scripts/bin/opspack incident-triage --input incident.json
-
-# With explicit JSON format
-scripts/bin/opspack incident-triage --input incident.json --format json
-```
-
-#### Input Format
-
-The input is a JSON file describing an incident snapshot:
-
-```json
-{
-  "id": "INC-2024-001",
-  "title": "Database connection timeout",
-  "description": "Users experiencing slow response times...",
-  "severity": "high",
-  "category": "availability",
-  "timestamp": "2024-12-21T14:30:00Z",
-  "source": "monitoring_alert",
-  "affected_services": ["api", "web"],
-  "users_affected": 500,
-  "reporter": "automated",
-  "tags": ["database", "timeout"]
-}
-```
-
-#### Output Format
-
-The command produces a JSON triage summary:
-
-```json
-{
-  "protocol_version": "0.1",
-  "incident": {
-    "id": "INC-2024-001",
-    "title": "Database connection timeout",
-    "timestamp": "2024-12-21T14:30:00Z",
-    "source": "monitoring_alert"
-  },
-  "classification": {
-    "severity": "high",
-    "category": "availability"
-  },
-  "recommended_actions": [
-    {
-      "priority": 1,
-      "action": "Check service health dashboards",
-      "rationale": "Confirm scope of outage"
-    }
-  ],
-  "risk_flags": [
-    {
-      "flag": "HIGH_USER_IMPACT",
-      "reason": "Affects 500 users",
-      "action": "Prepare customer communication"
-    }
-  ],
-  "evidence": {
-    "source_fields_present": ["id", "title", "..."],
-    "source_fields_missing": [],
-    "extracted_data": {}
-  }
-}
-```
-
-### Security Posture
-
-- **Read-only**: No filesystem writes (except stdout)
-- **No network**: No HTTP clients or API calls
-- **No shell**: No subprocess or shell execution
-- **Deterministic**: Same input always produces same output
+---
 
 ## What OpsPack is NOT
 
@@ -106,42 +24,189 @@ OpsPack explicitly excludes the following capabilities:
 
 | Non-Goal | Rationale |
 |----------|-----------|
+| Network access | No HTTP clients, no API calls, no telemetry |
+| Shell execution | No subprocess with shell=True, no os.system() |
+| ML/NLP | No machine learning or natural language processing |
+| Write operations | Read-only by design (except stdout) |
 | Agents | No long-running daemons or background processes |
 | Connectors | No real-time integrations with external systems |
-| Automation | No automated remediation or state-changing actions |
-| Write operations | Read-only by design; no filesystem or database writes |
-| Network access | No HTTP clients, no API calls, no telemetry upload |
-| Shell execution | No subprocess with shell=True, no os.system() |
+
+These are **hard security guarantees**, enforced by CI and static analysis.
+
+---
+
+## Quick Start
+
+### Installation
+
+```bash
+# From repository root
+pip install -e products/opspack
+
+# Or run directly without installation
+cd products/opspack/src
+python -m opspack --help
+```
+
+### Usage: triage
+
+The `triage` command analyzes an incident log file and produces a structured JSON report.
+
+```bash
+# Basic usage
+python -m opspack triage --input incident.log
+
+# Write output to file
+python -m opspack triage --input incident.log --output-file report.json
+```
+
+#### Input
+
+- Plain text file (UTF-8 or Latin-1)
+- Log files, incident notes, stack traces, etc.
+
+#### Output (JSON)
+
+```json
+{
+  "char_count": 1847,
+  "generated_at_utc": "2024-01-15T10:30:00Z",
+  "input_path": "incident.log",
+  "input_path_type": "repo-relative",
+  "line_count": 42,
+  "redaction_applied": true,
+  "schema_version": "1.0.0",
+  "signals": {
+    "error_keywords": ["error", "failed", "timeout"],
+    "stacktrace_markers": ["File \"app.py\", line..."],
+    "timestamps": ["2024-01-15T10:30:00Z"]
+  },
+  "summary": "Analyzed 42 lines: 3 error keyword(s), 1 timestamp(s)."
+}
+```
+
+#### Options
+
+| Flag | Description |
+|------|-------------|
+| `--input`, `-i` | Path to input file (required) |
+| `--output`, `-o` | Output format: `json` (default) |
+| `--output-file`, `-f` | Write output to file instead of stdout |
+| `--no-redact` | Disable automatic redaction (NOT RECOMMENDED) |
+
+---
+
+## Data Handling Guarantees
+
+### Redaction Defaults
+
+By default, OpsPack redacts:
+
+| Pattern | Examples |
+|---------|----------|
+| AWS Access Keys | `AKIA...` |
+| AWS Secret Keys | 40-char base64 strings |
+| Slack Tokens | `xoxb-...`, `xoxp-...` |
+| Bearer Tokens | `Bearer eyJ...` |
+| GitHub Tokens | `ghp_...`, `gho_...` |
+| JWT Tokens | `eyJ...` format |
+| IP Addresses | IPv4 and IPv6 |
+| UUIDs | Standard UUID format |
+| Long Hex Strings | 32+ character hashes |
+| Email Addresses | `user@domain.tld` |
+
+All redacted content is replaced with `[REDACTED]`.
+
+### Local-Only Guarantee
+
+OpsPack operates entirely locally:
+
+- No HTTP/HTTPS requests
+- No DNS lookups
+- No socket connections
+- No external process spawning
+
+This is verified by static analysis in CI.
+
+### Determinism Guarantee
+
+For reproducible automation:
+
+- JSON keys are always sorted alphabetically
+- Signal lists are sorted
+- Output formatting is consistent (2-space indent)
+- Use `--fixed-time` for timestamp-independent testing
+
+---
+
+## Running Tests
+
+```bash
+# From products/opspack directory
+cd products/opspack
+
+# Run all tests
+python -m pytest tests/ -v
+
+# Run specific test categories
+python -m pytest tests/test_cli_smoke.py -v
+python -m pytest tests/test_redaction_tokens.py -v
+python -m pytest tests/test_determinism.py -v
+python -m pytest tests/test_no_network_shell.py -v
+```
+
+---
+
+## Project Structure
+
+```
+products/opspack/
+├── README.md                 # This file
+├── SECURITY.md               # Security policy
+├── pyproject.toml            # Package configuration
+├── src/
+│   └── opspack/
+│       ├── __init__.py       # Package init + version
+│       ├── __main__.py       # Entry point for python -m
+│       ├── cli.py            # CLI argument parsing + commands
+│       ├── model.py          # Data structures + schema constants
+│       └── redact.py         # Stateless redaction primitives
+└── tests/
+    ├── test_cli_smoke.py          # CLI functionality tests
+    ├── test_redaction_tokens.py   # Token redaction tests
+    ├── test_redaction_ip.py       # IP redaction tests
+    ├── test_determinism.py        # Output determinism tests
+    └── test_no_network_shell.py   # Static security assertions
+```
+
+---
 
 ## AirGap Alignment
 
-OpsPack is designed to run under the same constraints as the Ninobyte AirGap MCP Server:
+OpsPack follows the same constraints as the Ninobyte AirGap MCP Server:
 
 - **Read-only**: All operations are non-mutating
-- **Deny-by-default**: Paths and data sources require explicit allowlisting
-- **Canonical path handling**: All paths are validated and canonicalized
+- **Deny-by-default**: Explicit path specification required
+- **Canonical path handling**: Paths are validated and normalized
 - **Redaction-first**: Sensitive data is redacted before any output
-- **Audit logging**: All operations are logged for forensic review
+- **Deterministic**: Same input always produces same output
 
-## How It Will Be Used (Future Phases)
-
-In future phases, OpsPack will provide:
-
-1. **Evidence Packs**: Structured collections of operational data (logs, configs, metrics) packaged for review
-2. **Validation Gates**: Schema-based validation of evidence pack contents
-3. **Reporting Outputs**: Human-readable and machine-parseable summaries
-
-All features will remain read-only and require explicit consent for data access.
+---
 
 ## Roadmap
 
 See [docs/ROADMAP.md](./docs/ROADMAP.md) for the phased implementation plan.
 
+---
+
 ## Security
 
 See [SECURITY.md](./SECURITY.md) for security posture and contributor guidelines.
 
-## References
+Report security issues per `SECURITY.md` in repository root.
 
-- [THREAT_MODEL.md](./docs/THREAT_MODEL.md) - Security threat analysis
-- [INTERFACE_CONTRACT.md](./docs/INTERFACE_CONTRACT.md) - Future module contracts
+---
+
+## License
+
+MIT License. See repository root for details.
