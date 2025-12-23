@@ -6,6 +6,38 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.8.4] - 2025-12-23
+
+### Added
+
+- **OpsPack MVP** (`products/opspack/`)
+  - New product: Deterministic incident triage and log analysis toolkit
+  - `python -m opspack triage` — Analyze incident logs with structured JSON output
+  - Stateless redaction primitives for sensitive data:
+    - AWS keys, Slack tokens, Bearer tokens, GitHub tokens, JWTs
+    - IPv4/IPv6 addresses, UUIDs, email addresses
+    - Long hex strings (32+ chars)
+  - Deterministic output: sorted JSON keys, stable formatting, reproducible results
+  - Security guarantees enforced by static analysis:
+    - No network imports (AST-verified)
+    - No shell execution (AST-verified)
+    - Redaction applied by default
+
+- **OpsPack Test Suite**
+  - 68 tests across 5 modules
+  - `test_cli_smoke.py` — CLI functionality verification
+  - `test_redaction_tokens.py` — Token pattern redaction (11 tests)
+  - `test_redaction_ip.py` — IP address redaction (14 tests)
+  - `test_determinism.py` — Output reproducibility (5 tests)
+  - `test_no_network_shell.py` — Static security assertions (6 tests)
+
+### PRs Included
+
+- #56: OpsPack MVP scaffold + triage CLI + redaction + tests
+- #57: Evidence closure for PR #56
+
+---
+
 ## [0.8.3] - 2025-12-22
 
 ### Added
