@@ -1,0 +1,12 @@
+{
+  "entries_file": "entries.csv",
+  "entries_file_sha256": "c9770246d37cd005d1365dd6d766263c083e58da54c756870c67950095511c73",
+  "entry_count": 30,
+  "fields_signature": "4c394412d093d80439fcb66f6084df319bd547b21197f6976cdb9eaa29f7e7ce",
+  "generated_at_utc": "2025-01-01T00:00:00Z",
+  "lock_schema_version": "1.0.0",
+  "normalized_entries_sha256": "152aeae022623d8830e139734a7d0b75db9ede66cd93fcb879ef7157a3c48b51",
+  "pack_id": "ghana-schools-core",
+  "pack_json_sha256": "d1ec113c6b217aed8961b8da7bb2dd8ac752d0c3fe31d89c53e328ec6967d65a",
+  "pack_schema_version": "1.0.0"
+}

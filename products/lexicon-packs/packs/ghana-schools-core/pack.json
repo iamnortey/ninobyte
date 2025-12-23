@@ -1,0 +1,19 @@
+{
+  "schema_version": "1.0.0",
+  "pack_id": "ghana-schools-core",
+  "name": "Ghana Schools and Universities",
+  "description": "Major Ghanaian educational institutions for entity recognition",
+  "license": "CC0-1.0",
+  "language": "en-GH",
+  "entry_format": "csv",
+  "entries_path": "entries.csv",
+  "fields": [
+    {"name": "term", "type": "string", "required": true},
+    {"name": "category", "type": "string", "required": true},
+    {"name": "notes", "type": "string", "required": false}
+  ],
+  "created_at_utc": "2025-01-01T00:00:00Z",
+  "source_attribution": [
+    {"name": "Public Domain Educational Data", "url": null}
+  ]
+}

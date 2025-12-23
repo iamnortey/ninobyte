@@ -4,6 +4,8 @@ Lexicon Packs Lockfile Validator
 
 Validates that all lexicon packs have valid, up-to-date lockfiles.
 
+Uses pack discovery API to find all packs dynamically.
+
 Usage:
     python scripts/ci/validate_lexicon_packs_lockfiles.py
 
@@ -25,7 +27,7 @@ def log_fail(msg: str) -> None:
 
 
 def main() -> int:
-    """Validate all lexicon pack lockfiles."""
+    """Validate all lexicon pack lockfiles using discovery API."""
     # Determine repo root
     script_path = Path(__file__).resolve()
     repo_root = script_path.parent.parent.parent
@@ -34,6 +36,11 @@ def main() -> int:
     lexicon_packs_src = repo_root / "products" / "lexicon-packs" / "src"
     sys.path.insert(0, str(lexicon_packs_src))
 
+    from lexicon_packs.discover import (
+        discover_packs,
+        verify_all_packs,
+        DiscoveryError,
+    )
     from lexicon_packs.lockfile import (
         generate_lockfile,
         format_lockfile_json,
@@ -47,10 +54,12 @@ def main() -> int:
         print("Lexicon packs directory not found (skipping)")
         return 0
 
-    # Find all packs (directories with pack.json)
-    pack_dirs = []
-    for pack_json in packs_root.glob("**/pack.json"):
-        pack_dirs.append(pack_json.parent)
+    # Use discovery API to find all packs
+    try:
+        pack_dirs = discover_packs(packs_root)
+    except DiscoveryError as e:
+        print(f"Discovery failed: {e}")
+        return 1
 
     if not pack_dirs:
         print("No lexicon packs found (skipping)")
@@ -60,7 +69,7 @@ def main() -> int:
     validated_count = 0
     failed_count = 0
 
-    for pack_dir in sorted(pack_dirs):
+    for pack_dir in pack_dirs:
         pack_name = pack_dir.name
         lockfile_path = pack_dir / "pack.lock.json"
 
