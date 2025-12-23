@@ -1,0 +1,20 @@
+{
+  "schema_version": "1",
+  "receipt_id": "decision_20251223_025526_7328a31",
+  "created_at_utc": "2025-12-23T02:55:26Z",
+  "title": "ADR evidence receipts and cross-link governance",
+  "status": "accepted",
+  "context": "Architecture decisions need immutable evidence trails like PR merges and validations. Without receipts, decisions can be altered or disputed without audit trail.",
+  "decision": "Implement ADR governance with canonical JSON receipts and mandatory cross-link validation. Each ADR must reference exactly one decision receipt, and each receipt must be referenced by an ADR.",
+  "consequences": "All architecture decisions have cryptographic integrity proofs. CI enforces cross-link policy preventing orphan receipts or undocumented decisions.",
+  "tags": [
+    "governance",
+    "adr",
+    "evidence"
+  ],
+  "source": "",
+  "notes": "",
+  "actor": "scripts/ops/log_decision.py",
+  "repo_head": "7328a31aa4133bfdbd073f73bb6341f57d51081b",
+  "adr_path": "docs/adr/ADR-20251223-025526-adr-evidence-receipts-and-cross-link-governance.md"
+}
