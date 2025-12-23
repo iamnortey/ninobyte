@@ -1,0 +1,12 @@
+{
+  "baseRefName": "main",
+  "headRefName": "chore/evidence-integrity-gate",
+  "mergeCommit": {
+    "oid": "38563f84107ee64011f8895cf0530d60f7add6d7"
+  },
+  "mergedAt": "2025-12-23T01:19:48Z",
+  "number": 46,
+  "state": "MERGED",
+  "title": "ci(evidence): add integrity gate and enforce relative paths",
+  "url": "https://github.com/iamnortey/ninobyte/pull/46"
+}
