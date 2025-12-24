@@ -341,27 +341,14 @@ my-plugin/
 
 ---
 
-### 2025-12-24 17:27:51Z
+## Evidence Receipts
 
-**Topic**: Evidence Index Determinism Contract v0.6.0
-**Status**: VALIDATED
-**Priority**: HIGH
-**Source**: governance contract upgrade
+Cross-linked validation receipts with cryptographic evidence.
 
-**Changes Validated**:
-- Canonical ordering: `(kind, id, canonical_path)` - stable across environments
-- Removed `generated_at_utc` from index artifacts for determinism
-- Added `--print` mode for diff verification
-- Added contract-grade regression tests
-
-**Gates Passed**:
-- validate_artifacts.py: PASSED
-- pytest: 92 passed
-- evidence index --check: byte-for-byte match
-- determinism tests: 4/4 passed
-- --print diff: identical
-
-**Receipt**: `ops/evidence/validation/validation_20251224_172751_evidence_index_v0.6.0.canonical.json`
+| Date (UTC) | Claim | Status | Confidence | Source | Receipt |
+|------------|-------|--------|------------|--------|---------|
+| 2025-12-23 01:59:16Z | Evidence engine now covers decisions | verified | medium | internal governance decision | `ops/evidence/validation/validation_20251223_015916_2e080e8.canonical.json` |
+| 2025-12-24 17:27:51Z | Evidence Index Determinism Contract v0.6.0 | VALIDATED | HIGH | governance contract upgrade | `ops/evidence/validation/validation_20251224_172751_evidence_index_v0.6.0.canonical.json` |
 
 ---
 
@@ -371,4 +358,3 @@ my-plugin/
 |----|-------|----------|----------|
 | VL-20251219-001 | Skills/MCP/Plugin schemas | HIGH | ✅ RESOLVED by VL-20251219-003/004/005 |
 | VL-20251219-002 | Manual web verification | HIGH | ✅ RESOLVED by VL-20251219-003/004/005 |
-| 2025-12-23 01:59:16Z | Evidence engine now covers decisions | verified | medium | internal governance decision | `ops/evidence/validation/validation_20251223_015916_2e080e8.canonical.json` |
