@@ -341,10 +341,20 @@ my-plugin/
 
 ---
 
+## Evidence Receipts
+
+Cross-linked validation receipts with cryptographic evidence.
+
+| Date (UTC) | Claim | Status | Confidence | Source | Receipt |
+|------------|-------|--------|------------|--------|---------|
+| 2025-12-23 01:59:16Z | Evidence engine now covers decisions | verified | medium | internal governance decision | `ops/evidence/validation/validation_20251223_015916_2e080e8.canonical.json` |
+| 2025-12-24 17:27:51Z | Evidence Index Determinism Contract v0.6.0 | VALIDATED | HIGH | governance contract upgrade | `ops/evidence/validation/validation_20251224_172751_evidence_index_v0.6.0.canonical.json` |
+
+---
+
 ## Pending Validations
 
 | ID | Topic | Priority | Assigned |
 |----|-------|----------|----------|
 | VL-20251219-001 | Skills/MCP/Plugin schemas | HIGH | ✅ RESOLVED by VL-20251219-003/004/005 |
 | VL-20251219-002 | Manual web verification | HIGH | ✅ RESOLVED by VL-20251219-003/004/005 |
-| 2025-12-23 01:59:16Z | Evidence engine now covers decisions | verified | medium | internal governance decision | `ops/evidence/validation/validation_20251223_015916_2e080e8.canonical.json` |

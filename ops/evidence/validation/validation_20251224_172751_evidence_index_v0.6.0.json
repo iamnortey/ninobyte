@@ -1,0 +1,39 @@
+{
+  "id": "validation_20251224_172751_evidence_index_v0.6.0",
+  "kind": "validation",
+  "title": "Evidence Index Determinism Contract v0.6.0",
+  "description": "Validation of order-stable, timestamp-safe evidence index builder",
+  "created_at_utc": "2025-12-24T17:27:51Z",
+  "source": "governance contract upgrade",
+  "main_head_sha": "77e232d43945bc864fb1d41683dc509f17833d03",
+  "pr_merged": 78,
+  "contract_version": "0.6.0",
+  "contract_changes": [
+    "Canonical ordering: (kind, id, canonical_path) - stable across environments",
+    "Removed generated_at_utc from index artifacts for determinism",
+    "Added --print mode for diff verification",
+    "Added contract-grade regression tests"
+  ],
+  "commands_executed": [
+    "python3 scripts/ci/validate_artifacts.py",
+    "python3 -m pytest -q",
+    "python3 scripts/ops/build_evidence_index.py --check",
+    "python3 scripts/ops/test_evidence_index_determinism.py",
+    "diff -u ops/evidence/INDEX.json <(python3 scripts/ops/build_evidence_index.py --print)"
+  ],
+  "results": {
+    "validate_artifacts": "PASSED",
+    "pytest": "92 passed",
+    "evidence_index_check": "byte-for-byte match",
+    "determinism_tests": "4/4 passed",
+    "print_diff": "identical"
+  },
+  "files_modified": [
+    "scripts/ops/build_evidence_index.py",
+    "scripts/ops/test_evidence_index_determinism.py",
+    "docs/GOVERNANCE_VERSIONING.md",
+    "ops/evidence/INDEX.json",
+    "ops/evidence/INDEX.canonical.json",
+    "ops/evidence/INDEX.canonical.json.sha256"
+  ]
+}
