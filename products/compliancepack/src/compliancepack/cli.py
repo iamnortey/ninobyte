@@ -5,7 +5,8 @@ Provides the `check` subcommand for compliance analysis.
 
 Contract:
 - --input <path>: Required, read-only file path
-- --policy <path>: Required, JSON policy file path
+- --policy <path> OR --pack <name>: Exactly one required (mutually exclusive)
+- --list-packs: List available packs and exit
 - --fixed-time <ISO8601Z>: Optional, deterministic timestamp
 - --redact/--no-redact: Optional, redaction control (default: ON)
 - Output: JSON to stdout, stable formatting
@@ -20,6 +21,7 @@ from typing import Any, Dict, Optional
 
 from compliancepack import __version__
 from compliancepack.engine import run_check
+from compliancepack.packs import PackError, get_pack_path, list_packs, load_pack
 from compliancepack.policy import PolicyValidationError, load_policy_file
 
 
@@ -36,10 +38,27 @@ def _output_json(data: Dict[str, Any]) -> None:
     print(json_str)
 
 
+def cmd_list_packs() -> int:
+    """List available packs and exit."""
+    packs = list_packs()
+
+    if not packs:
+        print("No packs available.")
+    else:
+        print("Available packs:")
+        for pack in packs:
+            print(f"  {pack}")
+
+    return 0
+
+
 def cmd_check(args: argparse.Namespace) -> int:
     """Execute the 'check' subcommand."""
+    # Handle --list-packs first
+    if getattr(args, "list_packs", False):
+        return cmd_list_packs()
+
     input_path = Path(args.input)
-    policy_path = Path(args.policy)
 
     # Validate input file exists (read-only check)
     if not input_path.exists():
@@ -50,24 +69,50 @@ def cmd_check(args: argparse.Namespace) -> int:
         sys.stderr.write(f"Error: Input path is not a file: {args.input}\n")
         return 1
 
-    # Validate policy file exists
-    if not policy_path.exists():
-        sys.stderr.write(f"Error: Policy file not found: {args.policy}\n")
-        return 1
+    # Determine policy source: --policy or --pack (mutually exclusive)
+    policy = getattr(args, "policy", None)
+    pack = getattr(args, "pack", None)
 
-    if not policy_path.is_file():
-        sys.stderr.write(f"Error: Policy path is not a file: {args.policy}\n")
-        return 1
+    if policy and pack:
+        sys.stderr.write("Error: Cannot specify both --policy and --pack\n")
+        return 2
 
-    # Load and validate policy file
-    try:
-        policy_file = load_policy_file(policy_path)
-    except PolicyValidationError as e:
-        sys.stderr.write(f"Error: Policy validation failed: {e}\n")
-        return 1
-    except json.JSONDecodeError as e:
-        sys.stderr.write(f"Error: Invalid JSON in policy file: {e}\n")
-        return 1
+    if not policy and not pack:
+        sys.stderr.write("Error: Must specify either --policy or --pack\n")
+        return 2
+
+    # Load policy from file or pack
+    if policy:
+        policy_path = Path(policy)
+
+        if not policy_path.exists():
+            sys.stderr.write(f"Error: Policy file not found: {policy}\n")
+            return 1
+
+        if not policy_path.is_file():
+            sys.stderr.write(f"Error: Policy path is not a file: {policy}\n")
+            return 1
+
+        try:
+            policy_file = load_policy_file(policy_path)
+            policy_path_str = str(policy_path)
+        except PolicyValidationError as e:
+            sys.stderr.write(f"Error: Policy validation failed: {e}\n")
+            return 1
+        except json.JSONDecodeError as e:
+            sys.stderr.write(f"Error: Invalid JSON in policy file: {e}\n")
+            return 1
+    else:
+        # Load from pack
+        try:
+            policy_file = load_pack(pack)
+            policy_path_str = f"pack:{pack}"
+        except PackError as e:
+            sys.stderr.write(f"Error: {e}\n")
+            return 1
+        except PolicyValidationError as e:
+            sys.stderr.write(f"Error: Pack validation failed: {e}\n")
+            return 1
 
     # Get timestamp
     timestamp = _get_timestamp(args.fixed_time)
@@ -76,7 +121,7 @@ def cmd_check(args: argparse.Namespace) -> int:
     result = run_check(
         input_path=str(input_path),
         policy_file=policy_file,
-        policy_path=str(policy_path),
+        policy_path=policy_path_str,
         generated_at_utc=timestamp,
         apply_redaction=args.redact,
     )
@@ -108,13 +153,26 @@ def create_parser() -> argparse.ArgumentParser:
     )
     check_parser.add_argument(
         "--input",
-        required=True,
         help="Path to input file (read-only)",
     )
-    check_parser.add_argument(
+
+    # Policy source: mutually exclusive --policy and --pack
+    policy_group = check_parser.add_mutually_exclusive_group()
+    policy_group.add_argument(
         "--policy",
-        required=True,
-        help="Path to JSON policy file",
+        metavar="PATH",
+        help="Path to custom JSON policy file",
+    )
+    policy_group.add_argument(
+        "--pack",
+        metavar="NAME",
+        help="Use built-in policy pack (e.g., secrets.v1, pii.v1)",
+    )
+
+    check_parser.add_argument(
+        "--list-packs",
+        action="store_true",
+        help="List available built-in packs and exit",
     )
     check_parser.add_argument(
         "--fixed-time",
@@ -148,6 +206,15 @@ def main() -> None:
         sys.exit(0)
 
     if args.command == "check":
+        # Handle --list-packs specially (no --input required)
+        if getattr(args, "list_packs", False):
+            sys.exit(cmd_list_packs())
+
+        # Otherwise, --input is required
+        if not args.input:
+            sys.stderr.write("Error: --input is required for check command\n")
+            sys.exit(2)
+
         sys.exit(cmd_check(args))
     else:
         parser.print_help()

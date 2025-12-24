@@ -494,6 +494,112 @@ def validate_compliancepack_full_contract(compliancepack_root: Path) -> bool:
     return True
 
 
+def validate_compliancepack_pack_contract(compliancepack_root: Path) -> bool:
+    """
+    Validate CompliancePack pack contract.
+
+    Tests:
+    - --list-packs succeeds and shows available packs
+    - --pack secrets.v1 produces valid JSON output
+    - Built-in packs are discoverable
+    """
+    # Test --list-packs
+    cmd = [
+        sys.executable,
+        "-m",
+        "compliancepack",
+        "check",
+        "--list-packs",
+    ]
+
+    env = {
+        **dict(os.environ),
+        "PYTHONPATH": str(compliancepack_root / "src"),
+    }
+
+    try:
+        result = subprocess.run(
+            cmd,
+            cwd=compliancepack_root,
+            capture_output=True,
+            text=True,
+            env=env,
+            timeout=30,
+        )
+    except subprocess.TimeoutExpired:
+        log_fail("CompliancePack --list-packs timed out (30s)")
+        return False
+    except Exception as e:
+        log_fail(f"CompliancePack --list-packs failed to run: {e}")
+        return False
+
+    if result.returncode != 0:
+        log_fail(f"CompliancePack --list-packs exit code {result.returncode}")
+        if result.stderr:
+            print(f"    stderr: {result.stderr[:500]}")
+        return False
+
+    # Verify expected packs are listed
+    if "secrets.v1" not in result.stdout or "pii.v1" not in result.stdout:
+        log_fail("CompliancePack --list-packs missing expected packs (secrets.v1, pii.v1)")
+        return False
+
+    # Test --pack execution
+    fixtures = compliancepack_root / "tests" / "fixtures"
+    input_file = fixtures / "sample_input.txt"
+
+    if not input_file.exists():
+        log_info("CompliancePack fixtures not found, skipping pack execution test")
+        return True
+
+    cmd = [
+        sys.executable,
+        "-m",
+        "compliancepack",
+        "check",
+        "--input", str(input_file),
+        "--pack", "secrets.v1",
+        "--fixed-time", "2025-01-01T00:00:00Z",
+    ]
+
+    try:
+        result = subprocess.run(
+            cmd,
+            cwd=compliancepack_root,
+            capture_output=True,
+            text=True,
+            env=env,
+            timeout=30,
+        )
+    except subprocess.TimeoutExpired:
+        log_fail("CompliancePack --pack test timed out (30s)")
+        return False
+    except Exception as e:
+        log_fail(f"CompliancePack --pack test failed to run: {e}")
+        return False
+
+    if result.returncode != 0:
+        log_fail(f"CompliancePack --pack test exit code {result.returncode}")
+        if result.stderr:
+            print(f"    stderr: {result.stderr[:500]}")
+        return False
+
+    # Parse JSON output
+    try:
+        output = json.loads(result.stdout)
+    except json.JSONDecodeError as e:
+        log_fail(f"CompliancePack --pack test: invalid JSON output: {e}")
+        return False
+
+    # Validate policy_path shows pack
+    if output.get("policy_path") != "pack:secrets.v1":
+        log_fail(f"CompliancePack: unexpected policy_path '{output.get('policy_path')}'")
+        return False
+
+    log_ok("CompliancePack pack contract passed (--list-packs, --pack secrets.v1)")
+    return True
+
+
 def validate_compliancepack_pytest(compliancepack_root: Path) -> bool:
     """
     Validate CompliancePack pytest suite passes.
@@ -579,37 +685,42 @@ def main() -> int:
     compliancepack_src = compliancepack_root / "src" / "compliancepack"
 
     # 1. Directory structure and governance docs
-    print("--- [1/7] Directory + Governance Docs ---")
+    print("--- [1/8] Directory + Governance Docs ---")
     if not validate_compliancepack_structure(compliancepack_root):
         all_passed = False
 
     # 2. Security posture: no networking imports
-    print("\n--- [2/7] Security Posture: No Networking ---")
+    print("\n--- [2/8] Security Posture: No Networking ---")
     if not validate_compliancepack_no_networking(compliancepack_src):
         all_passed = False
 
     # 3. Security posture: no shell execution
-    print("\n--- [3/7] Security Posture: No Shell Execution ---")
+    print("\n--- [3/8] Security Posture: No Shell Execution ---")
     if not validate_compliancepack_no_shell_execution(compliancepack_src):
         all_passed = False
 
     # 4. No file write guarantee
-    print("\n--- [4/7] No File Write Guarantee ---")
+    print("\n--- [4/8] No File Write Guarantee ---")
     if not validate_compliancepack_no_file_writes(compliancepack_src):
         all_passed = False
 
     # 5. CLI contract smoke test (product-local)
-    print("\n--- [5/7] CLI Contract (Product-Local) ---")
+    print("\n--- [5/8] CLI Contract (Product-Local) ---")
     if not validate_compliancepack_cli_contract(compliancepack_root):
         all_passed = False
 
     # 6. Full contract test with fixtures
-    print("\n--- [6/7] Full Contract Test ---")
+    print("\n--- [6/8] Full Contract Test ---")
     if not validate_compliancepack_full_contract(compliancepack_root):
         all_passed = False
 
-    # 7. Pytest suite
-    print("\n--- [7/7] Pytest Suite ---")
+    # 7. Pack contract test
+    print("\n--- [7/8] Pack Contract Test ---")
+    if not validate_compliancepack_pack_contract(compliancepack_root):
+        all_passed = False
+
+    # 8. Pytest suite
+    print("\n--- [8/8] Pytest Suite ---")
     if not validate_compliancepack_pytest(compliancepack_root):
         all_passed = False
 
