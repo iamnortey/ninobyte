@@ -341,6 +341,30 @@ my-plugin/
 
 ---
 
+### 2025-12-24 17:27:51Z
+
+**Topic**: Evidence Index Determinism Contract v0.6.0
+**Status**: VALIDATED
+**Priority**: HIGH
+**Source**: governance contract upgrade
+
+**Changes Validated**:
+- Canonical ordering: `(kind, id, canonical_path)` - stable across environments
+- Removed `generated_at_utc` from index artifacts for determinism
+- Added `--print` mode for diff verification
+- Added contract-grade regression tests
+
+**Gates Passed**:
+- validate_artifacts.py: PASSED
+- pytest: 92 passed
+- evidence index --check: byte-for-byte match
+- determinism tests: 4/4 passed
+- --print diff: identical
+
+**Receipt**: `ops/evidence/validation/validation_20251224_172751_evidence_index_v0.6.0.canonical.json`
+
+---
+
 ## Pending Validations
 
 | ID | Topic | Priority | Assigned |
