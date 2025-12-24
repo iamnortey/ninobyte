@@ -1460,6 +1460,28 @@ def main() -> int:
     else:
         log_info("NetOpsPack governance validator not found (skipping)")
 
+    # 8d. CompliancePack governance validation (v0.10.0+)
+    # Canonical path: products/compliancepack/
+    print("\n--- CompliancePack Governance Validation (v0.10.0) ---")
+    compliancepack_validator = repo_root / 'scripts' / 'ci' / 'validate_compliancepack.py'
+    if compliancepack_validator.exists():
+        import subprocess
+        result = subprocess.run(
+            [sys.executable, str(compliancepack_validator)],
+            cwd=repo_root,
+            capture_output=True,
+            text=True,
+        )
+        # Print output (already formatted by the validator)
+        if result.stdout:
+            print(result.stdout)
+        if result.stderr:
+            print(result.stderr, file=sys.stderr)
+        if result.returncode != 0:
+            all_passed = False
+    else:
+        log_info("CompliancePack governance validator not found (skipping)")
+
     # 9. Validation log cross-link enforcement (v0.4.0+)
     print("\n--- Validation Log Cross-Links (v0.4.0) ---")
     cross_link_validator = repo_root / 'scripts' / 'ci' / 'validate_validation_log_links.py'

@@ -1,0 +1,32 @@
+{
+  "schema_version": "1.0",
+  "policies": [
+    {
+      "id": "CP0001",
+      "title": "AWS Access Key Pattern",
+      "severity": "high",
+      "type": "regex",
+      "pattern": "AKIA[0-9A-Z]{16}",
+      "description": "Detect potential AWS access keys in plaintext artifacts.",
+      "sample_limit": 3
+    },
+    {
+      "id": "CP0002",
+      "title": "Private Key Block Marker",
+      "severity": "critical",
+      "type": "contains",
+      "needle": "BEGIN PRIVATE KEY",
+      "description": "Detect private key material markers.",
+      "sample_limit": 2
+    },
+    {
+      "id": "CP0003",
+      "title": "Email Address Pattern",
+      "severity": "medium",
+      "type": "regex",
+      "pattern": "[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}",
+      "description": "Detect potential PII email addresses.",
+      "sample_limit": 3
+    }
+  ]
+}

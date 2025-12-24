@@ -6,6 +6,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.10.0] - Unreleased
+
+### Added
+
+- **CompliancePack MVP Scaffold** (`products/compliancepack/`)
+  - Contract-first compliance evidence toolkit
+  - CLI scaffold: `python -m compliancepack check`
+  - Security policy: no network, no shell, no file writes
+  - Governance validator: `scripts/ci/validate_compliancepack.py`
+
+---
+
 ## [0.9.1] - 2025-12-24
 
 ### Added
