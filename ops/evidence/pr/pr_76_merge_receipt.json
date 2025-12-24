@@ -1,0 +1,29 @@
+{
+  "pr_number": 76,
+  "title": "feat(compliancepack): add directory scanning support",
+  "merge_sha": "6b8ba36ac0630614fd48989567dcd627b441ac8c",
+  "merged_at": "2025-01-01T00:00:00Z",
+  "base_branch": "main",
+  "head_branch": "feat/compliancepack-directory-scan",
+  "files_changed": 9,
+  "additions": 1178,
+  "deletions": 14,
+  "release_tag": "v0.11.0",
+  "release_sha": "6b8ba36ac0630614fd48989567dcd627b441ac8c",
+  "gates_passed": [
+    "validate_artifacts",
+    "pytest",
+    "evidence_index"
+  ],
+  "features_added": [
+    "Directory scanning with collect_targets()",
+    "File reading with byte limits via read_file_limited()",
+    "Security boundaries: realpath, symlink escape prevention",
+    "CLI flags: --max-files, --max-bytes-per-file, --include-ext, --follow-symlinks",
+    "Multi-file engine with run_check_multi()",
+    "SARIF-lite multi-file support",
+    "Repeatable --input flag for multiple paths"
+  ],
+  "test_count": 216,
+  "evidence_generated_at": "2025-01-01T00:00:00Z"
+}

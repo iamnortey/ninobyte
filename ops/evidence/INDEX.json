@@ -1,7 +1,7 @@
 {
   "counts": {
     "decision": 1,
-    "pr": 23,
+    "pr": 24,
     "validation": 1
   },
   "generated_at_utc": "2025-12-24T16:23:48Z",
@@ -245,6 +245,14 @@
       "sort_timestamp_utc": "2025-12-24T16:23:48Z",
       "source_ref": "https://github.com/iamnortey/ninobyte/pull/74",
       "timestamp_utc": "2025-12-24T16:23:48Z"
+    },
+    {
+      "canonical_path": "ops/evidence/pr/pr_76_merge_receipt.canonical.json",
+      "id": "pr_76_merge_receipt",
+      "kind": "pr",
+      "sha256": "a5336bda49796d29dfc6dd0ab9c15bd8748b190fc9d0faea386c02e5803897c3",
+      "sha256_path": "ops/evidence/pr/pr_76_merge_receipt.canonical.json.sha256",
+      "sort_timestamp_utc": "9999-12-31T23:59:59Z"
     },
     {
       "canonical_path": "ops/evidence/validation/validation_20251223_015916_2e080e8.canonical.json",
