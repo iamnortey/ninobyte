@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
 """
-CompliancePack Governance Validator (v0.10.0)
+CompliancePack Governance Validator (v0.11.0)
 
 Validates CompliancePack security posture and governance requirements:
 - Directory structure and governance docs exist
 - No forbidden networking imports (stdlib-only, no network access)
 - No shell execution (subprocess, os.system, os.popen)
 - No file writes (stdout-only output)
-- CLI contract smoke test (canonical command produces valid output)
+- CLI contract smoke test (product-local and repo-root)
+- Repo-root invocation contract enforcement
 
 Usage:
     python scripts/ci/validate_compliancepack.py
@@ -614,6 +615,92 @@ def validate_compliancepack_pack_contract(compliancepack_root: Path) -> bool:
     return True
 
 
+def validate_compliancepack_repo_root_contract(repo_root: Path) -> bool:
+    """
+    Validate CompliancePack repo-root invocation contract.
+
+    Tests that CompliancePack can be invoked from repo root with PYTHONPATH prefix.
+    This is the canonical invocation method (no pip install -e . required).
+
+    Runs:
+        PYTHONPATH=products/compliancepack/src python3 -m compliancepack check ...
+    """
+    compliancepack_root = repo_root / "products" / "compliancepack"
+    fixtures = compliancepack_root / "tests" / "fixtures"
+    input_file = fixtures / "sample_input.txt"
+
+    if not input_file.exists():
+        log_info("CompliancePack fixtures not found, skipping repo-root contract test")
+        return True
+
+    # Test repo-root invocation with PYTHONPATH
+    cmd = [
+        sys.executable,
+        "-m",
+        "compliancepack",
+        "check",
+        "--input", str(input_file),
+        "--pack", "secrets.v1",
+        "--fail-on", "high",
+        "--fixed-time", "2025-01-01T00:00:00Z",
+        "--format", "compliancepack.check.v1",
+    ]
+
+    env = {
+        **dict(os.environ),
+        "PYTHONPATH": str(compliancepack_root / "src"),
+    }
+
+    try:
+        result = subprocess.run(
+            cmd,
+            cwd=repo_root,  # Run from REPO ROOT, not product directory
+            capture_output=True,
+            text=True,
+            env=env,
+            timeout=30,
+        )
+    except subprocess.TimeoutExpired:
+        log_fail("CompliancePack repo-root contract test timed out (30s)")
+        return False
+    except Exception as e:
+        log_fail(f"CompliancePack repo-root contract test failed to run: {e}")
+        return False
+
+    # Exit code 0 = no violations, 3 = violations found (both valid)
+    if result.returncode not in (0, 3):
+        log_fail(f"CompliancePack repo-root contract exit code {result.returncode}")
+        if result.stderr:
+            print(f"    stderr: {result.stderr[:500]}")
+        return False
+
+    # Parse JSON output
+    try:
+        output = json.loads(result.stdout)
+    except json.JSONDecodeError as e:
+        log_fail(f"CompliancePack repo-root contract: invalid JSON output: {e}")
+        return False
+
+    # Validate format
+    if output.get("format") != "compliancepack.check.v1":
+        log_fail(f"CompliancePack repo-root: unexpected format '{output.get('format')}'")
+        return False
+
+    # Validate threshold enforcement fields
+    if "threshold" not in output:
+        log_fail("CompliancePack repo-root: 'threshold' field missing")
+        return False
+
+    # Validate exit_code_expected matches actual exit code
+    expected_exit = output.get("exit_code_expected")
+    if expected_exit != result.returncode:
+        log_fail(f"CompliancePack repo-root: exit_code_expected={expected_exit} but actual={result.returncode}")
+        return False
+
+    log_ok("CompliancePack repo-root contract passed (PYTHONPATH invocation from repo root)")
+    return True
+
+
 def validate_compliancepack_pytest(compliancepack_root: Path) -> bool:
     """
     Validate CompliancePack pytest suite passes.
@@ -689,7 +776,7 @@ def main() -> int:
     _REPO_ROOT = repo_root
 
     print(f"\n{'=' * 60}")
-    print("CompliancePack Governance Validation (v0.10.0)")
+    print("CompliancePack Governance Validation (v0.11.0)")
     print(f"{'=' * 60}\n")
 
     all_passed = True
@@ -699,42 +786,47 @@ def main() -> int:
     compliancepack_src = compliancepack_root / "src" / "compliancepack"
 
     # 1. Directory structure and governance docs
-    print("--- [1/8] Directory + Governance Docs ---")
+    print("--- [1/9] Directory + Governance Docs ---")
     if not validate_compliancepack_structure(compliancepack_root):
         all_passed = False
 
     # 2. Security posture: no networking imports
-    print("\n--- [2/8] Security Posture: No Networking ---")
+    print("\n--- [2/9] Security Posture: No Networking ---")
     if not validate_compliancepack_no_networking(compliancepack_src):
         all_passed = False
 
     # 3. Security posture: no shell execution
-    print("\n--- [3/8] Security Posture: No Shell Execution ---")
+    print("\n--- [3/9] Security Posture: No Shell Execution ---")
     if not validate_compliancepack_no_shell_execution(compliancepack_src):
         all_passed = False
 
     # 4. No file write guarantee
-    print("\n--- [4/8] No File Write Guarantee ---")
+    print("\n--- [4/9] No File Write Guarantee ---")
     if not validate_compliancepack_no_file_writes(compliancepack_src):
         all_passed = False
 
     # 5. CLI contract smoke test (product-local)
-    print("\n--- [5/8] CLI Contract (Product-Local) ---")
+    print("\n--- [5/9] CLI Contract (Product-Local) ---")
     if not validate_compliancepack_cli_contract(compliancepack_root):
         all_passed = False
 
     # 6. Full contract test with fixtures
-    print("\n--- [6/8] Full Contract Test ---")
+    print("\n--- [6/9] Full Contract Test ---")
     if not validate_compliancepack_full_contract(compliancepack_root):
         all_passed = False
 
     # 7. Pack contract test
-    print("\n--- [7/8] Pack Contract Test ---")
+    print("\n--- [7/9] Pack Contract Test ---")
     if not validate_compliancepack_pack_contract(compliancepack_root):
         all_passed = False
 
-    # 8. Pytest suite
-    print("\n--- [8/8] Pytest Suite ---")
+    # 8. Repo-root invocation contract
+    print("\n--- [8/9] Repo-Root Invocation Contract ---")
+    if not validate_compliancepack_repo_root_contract(repo_root):
+        all_passed = False
+
+    # 9. Pytest suite
+    print("\n--- [9/9] Pytest Suite ---")
     if not validate_compliancepack_pytest(compliancepack_root):
         all_passed = False
 
