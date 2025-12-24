@@ -47,8 +47,9 @@ class TestDeterministicOutput:
             "--fixed-time", "2025-01-01T00:00:00Z",
         )
 
-        assert result1.returncode == 0
-        assert result2.returncode == 0
+        # Exit code 0 or 3 are valid (3 = findings found)
+        assert result1.returncode in (0, 3)
+        assert result2.returncode in (0, 3)
         assert result1.stdout == result2.stdout, "Output should be byte-for-byte identical"
 
     def test_multiple_runs_identical(self):
@@ -65,7 +66,8 @@ class TestDeterministicOutput:
                 "--policy", str(policy_file),
                 "--fixed-time", "2025-01-01T00:00:00Z",
             )
-            assert result.returncode == 0
+            # Exit code 0 or 3 are valid (3 = findings found)
+            assert result.returncode in (0, 3)
             outputs.append(result.stdout)
 
         # All outputs should be identical
@@ -84,7 +86,8 @@ class TestDeterministicOutput:
             "--fixed-time", "2025-01-01T00:00:00Z",
         )
 
-        assert result.returncode == 0
+        # Exit code 0 or 3 are valid (3 = findings found)
+        assert result.returncode in (0, 3)
         output = json.loads(result.stdout)
         assert output["format"] == "compliancepack.check.v1"
 
@@ -101,7 +104,8 @@ class TestDeterministicOutput:
             "--fixed-time", "2025-01-01T00:00:00Z",
         )
 
-        assert result.returncode == 0
+        # Exit code 0 or 3 are valid (3 = findings found)
+        assert result.returncode in (0, 3)
 
         # Parse and re-serialize with sort_keys=True
         output = json.loads(result.stdout)
@@ -123,7 +127,8 @@ class TestDeterministicOutput:
             "--fixed-time", "2025-01-01T00:00:00Z",
         )
 
-        assert result.returncode == 0
+        # Exit code 0 or 3 are valid (3 = findings found)
+        assert result.returncode in (0, 3)
         output = json.loads(result.stdout)
 
         # Findings should be sorted by severity then id
@@ -153,7 +158,8 @@ class TestDeterministicOutput:
             "--fixed-time", "2025-01-01T00:00:00Z",
         )
 
-        assert result.returncode == 0
+        # Exit code 0 or 3 are valid (3 = findings found)
+        assert result.returncode in (0, 3)
         output = json.loads(result.stdout)
 
         for finding in output["findings"]:

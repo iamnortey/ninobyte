@@ -115,7 +115,8 @@ class TestCheckCommand:
             "--fixed-time", "2025-01-01T00:00:00Z",
         )
 
-        assert result.returncode == 0
+        # Exit code 0 or 3 are valid (3 = findings found at/above threshold)
+        assert result.returncode in (0, 3)
 
         # Output should be valid JSON
         output = json.loads(result.stdout)
@@ -137,7 +138,8 @@ class TestCheckCommand:
             "--fixed-time", "2025-01-01T00:00:00Z",
         )
 
-        assert result.returncode == 0
+        # Exit code 3 expected (findings at/above high threshold)
+        assert result.returncode == 3
         output = json.loads(result.stdout)
 
         # Should find 3 findings: AWS key, email, private key
@@ -163,7 +165,8 @@ class TestCheckCommand:
             "--fixed-time", "2025-01-01T00:00:00Z",
         )
 
-        assert result.returncode == 0
+        # Exit code 0 or 3 are valid (3 = findings found)
+        assert result.returncode in (0, 3)
         output = json.loads(result.stdout)
         assert output["format"] == "compliancepack.check.v1"
 
@@ -184,7 +187,8 @@ class TestRedactionFlag:
             "--fixed-time", "2025-01-01T00:00:00Z",
         )
 
-        assert result.returncode == 0
+        # Exit code 0 or 3 are valid (3 = findings found)
+        assert result.returncode in (0, 3)
         output = json.loads(result.stdout)
         assert output["redaction_applied"] is True
 
@@ -206,7 +210,8 @@ class TestRedactionFlag:
             "--redact",
         )
 
-        assert result.returncode == 0
+        # Exit code 0 or 3 are valid (3 = findings found)
+        assert result.returncode in (0, 3)
         output = json.loads(result.stdout)
         assert output["redaction_applied"] is True
 
@@ -224,7 +229,8 @@ class TestRedactionFlag:
             "--no-redact",
         )
 
-        assert result.returncode == 0
+        # Exit code 0 or 3 are valid (3 = findings found)
+        assert result.returncode in (0, 3)
         output = json.loads(result.stdout)
         assert output["redaction_applied"] is False
 
@@ -245,7 +251,8 @@ class TestRedactionFlag:
             "--fixed-time", "2025-01-01T00:00:00Z",
         )
 
-        assert result.returncode == 0
+        # Exit code 0 or 3 are valid (3 = findings found)
+        assert result.returncode in (0, 3)
 
         # Should contain redaction tokens
         assert "[REDACTED_KEY]" in result.stdout or "[REDACTED_EMAIL]" in result.stdout or "[REDACTED_TOKEN]" in result.stdout

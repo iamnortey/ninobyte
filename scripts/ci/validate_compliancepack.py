@@ -461,7 +461,9 @@ def validate_compliancepack_full_contract(compliancepack_root: Path) -> bool:
         log_fail(f"CompliancePack full contract test failed to run: {e}")
         return False
 
-    if result.returncode != 0:
+    # Exit code 0 = no violations, 3 = violations found (both valid)
+    # Exit code 1 = runtime error, 2 = usage error (both invalid)
+    if result.returncode not in (0, 3):
         log_fail(f"CompliancePack full contract test exit code {result.returncode}")
         if result.stderr:
             print(f"    stderr: {result.stderr[:500]}")
@@ -488,6 +490,11 @@ def validate_compliancepack_full_contract(compliancepack_root: Path) -> bool:
     # Validate findings is present
     if "findings" not in output:
         log_fail("CompliancePack: 'findings' field missing from output")
+        return False
+
+    # Validate threshold enforcement fields (v0.11.0+)
+    if "threshold" not in output:
+        log_fail("CompliancePack: 'threshold' field missing from output")
         return False
 
     log_ok(f"CompliancePack full contract passed ({policy_count} policies, {len(output['findings'])} findings)")
@@ -578,7 +585,9 @@ def validate_compliancepack_pack_contract(compliancepack_root: Path) -> bool:
         log_fail(f"CompliancePack --pack test failed to run: {e}")
         return False
 
-    if result.returncode != 0:
+    # Exit code 0 = no violations, 3 = violations found (both valid)
+    # secrets.v1 will find findings, so exit 3 is expected
+    if result.returncode not in (0, 3):
         log_fail(f"CompliancePack --pack test exit code {result.returncode}")
         if result.stderr:
             print(f"    stderr: {result.stderr[:500]}")
@@ -594,6 +603,11 @@ def validate_compliancepack_pack_contract(compliancepack_root: Path) -> bool:
     # Validate policy_path shows pack
     if output.get("policy_path") != "pack:secrets.v1":
         log_fail(f"CompliancePack: unexpected policy_path '{output.get('policy_path')}'")
+        return False
+
+    # Validate threshold enforcement fields
+    if "threshold" not in output:
+        log_fail("CompliancePack --pack test: 'threshold' field missing")
         return False
 
     log_ok("CompliancePack pack contract passed (--list-packs, --pack secrets.v1)")

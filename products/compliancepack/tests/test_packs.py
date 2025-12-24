@@ -248,7 +248,8 @@ class TestCLIPolicyPackMutualExclusion:
             "--policy", str(policy_file),
             "--fixed-time", "2025-01-01T00:00:00Z",
         )
-        assert result.returncode == 0
+        # Exit code 0 or 3 are valid (3 = findings found)
+        assert result.returncode in (0, 3)
 
     def test_pack_only_works(self):
         """check with only --pack should work."""
@@ -261,7 +262,8 @@ class TestCLIPolicyPackMutualExclusion:
             "--pack", "secrets.v1",
             "--fixed-time", "2025-01-01T00:00:00Z",
         )
-        assert result.returncode == 0
+        # Exit code 0 or 3 are valid (3 = findings found)
+        assert result.returncode in (0, 3)
 
 
 class TestCLIPackExecution:
@@ -279,7 +281,8 @@ class TestCLIPackExecution:
             "--fixed-time", "2025-01-01T00:00:00Z",
         )
 
-        assert result.returncode == 0
+        # Exit code 3 expected (findings at/above high threshold)
+        assert result.returncode == 3
         output = json.loads(result.stdout)
 
         assert output["format"] == "compliancepack.check.v1"
@@ -302,6 +305,7 @@ class TestCLIPackExecution:
             "--fixed-time", "2025-01-01T00:00:00Z",
         )
 
+        # Exit code 0 expected (medium findings don't meet high threshold)
         assert result.returncode == 0
         output = json.loads(result.stdout)
 
@@ -356,8 +360,9 @@ class TestPackDeterminism:
         result1 = run_cli(*args)
         result2 = run_cli(*args)
 
-        assert result1.returncode == 0
-        assert result2.returncode == 0
+        # Exit code 3 expected (findings at/above high threshold)
+        assert result1.returncode == 3
+        assert result2.returncode == 3
         assert result1.stdout == result2.stdout
 
     def test_pack_output_schema_fields(self):
@@ -372,7 +377,8 @@ class TestPackDeterminism:
             "--fixed-time", "2025-01-01T00:00:00Z",
         )
 
-        assert result.returncode == 0
+        # Exit code 3 expected (findings at/above high threshold)
+        assert result.returncode == 3
         output = json.loads(result.stdout)
 
         # Required top-level fields
