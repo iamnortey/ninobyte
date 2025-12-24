@@ -6,7 +6,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
-## [0.9.0] - Unreleased
+## [0.9.1] - 2025-12-24
+
+### Added
+
+- **NetOpsPack Repo-Root Execution Contract** (PR #72)
+  - `PYTHONPATH=products/netopspack/src python3 -m netopspack` works from repo root
+  - CI validator: all 3 formats (syslog, nginx, haproxy) tested from repo root
+  - CI gate reordered: test deps installed before artifact validation
+
+---
+
+## [0.9.0] - 2025-12-23
 
 ### Added
 
