@@ -5,6 +5,9 @@ Tests:
 1. Build twice with no changes -> byte-for-byte identical
 2. Ordering is strictly (kind, id, path)
 3. No generated_at_utc in output (determinism contract v0.6.0)
+4. Counts match item counts
+5. --print output matches INDEX.json bytes exactly
+6. --print-canonical output matches INDEX.canonical.json bytes exactly
 
 Usage:
     python3 scripts/ops/test_evidence_index_determinism.py
@@ -153,6 +156,80 @@ def test_counts_match_items() -> bool:
     return True
 
 
+def test_print_matches_index_json() -> bool:
+    """Assert format_human_readable output == INDEX.json bytes exactly."""
+    print("Test: --print output matches INDEX.json bytes")
+
+    script_path = Path(__file__).resolve()
+    repo_root = script_path.parent.parent.parent
+
+    # Read existing INDEX.json
+    index_json_path = repo_root / "ops" / "evidence" / "INDEX.json"
+    if not index_json_path.exists():
+        print(f"  ❌ FAIL: {index_json_path} does not exist")
+        return False
+
+    expected_bytes = index_json_path.read_text(encoding="utf-8")
+
+    # Build index and format
+    index_data, errors = build_index(repo_root)
+
+    if errors:
+        print(f"  ❌ FAIL: Errors during build: {errors}")
+        return False
+
+    actual_bytes = format_human_readable(index_data)
+
+    if actual_bytes != expected_bytes:
+        print("  ❌ FAIL: format_human_readable output differs from INDEX.json")
+        # Show first diff location
+        for i, (a, b) in enumerate(zip(actual_bytes, expected_bytes)):
+            if a != b:
+                print(f"     First diff at byte {i}: expected {repr(b)}, got {repr(a)}")
+                break
+        return False
+
+    print("  ✅ PASS: --print matches INDEX.json (byte-for-byte)")
+    return True
+
+
+def test_print_canonical_matches_canonical_json() -> bool:
+    """Assert canonicalize output == INDEX.canonical.json bytes exactly."""
+    print("Test: --print-canonical output matches INDEX.canonical.json bytes")
+
+    script_path = Path(__file__).resolve()
+    repo_root = script_path.parent.parent.parent
+
+    # Read existing INDEX.canonical.json
+    canonical_path = repo_root / "ops" / "evidence" / "INDEX.canonical.json"
+    if not canonical_path.exists():
+        print(f"  ❌ FAIL: {canonical_path} does not exist")
+        return False
+
+    expected_bytes = canonical_path.read_text(encoding="utf-8")
+
+    # Build index and canonicalize
+    index_data, errors = build_index(repo_root)
+
+    if errors:
+        print(f"  ❌ FAIL: Errors during build: {errors}")
+        return False
+
+    actual_bytes = canonicalize(index_data)
+
+    if actual_bytes != expected_bytes:
+        print("  ❌ FAIL: canonicalize output differs from INDEX.canonical.json")
+        # Show first diff location
+        for i, (a, b) in enumerate(zip(actual_bytes, expected_bytes)):
+            if a != b:
+                print(f"     First diff at byte {i}: expected {repr(b)}, got {repr(a)}")
+                break
+        return False
+
+    print("  ✅ PASS: --print-canonical matches INDEX.canonical.json (byte-for-byte)")
+    return True
+
+
 def main() -> int:
     print("=" * 60)
     print("Evidence Index Determinism Tests")
@@ -164,6 +241,8 @@ def main() -> int:
         test_ordering_by_kind_id_path,
         test_no_generated_at_utc,
         test_counts_match_items,
+        test_print_matches_index_json,
+        test_print_canonical_matches_canonical_json,
     ]
 
     passed = 0
