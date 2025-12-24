@@ -6,6 +6,34 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [Unreleased]
+
+### Fixed
+
+- **Evidence Index Print Contract** (PR #80)
+  - `--print` now outputs human-readable JSON matching `INDEX.json` byte-for-byte
+  - Added `--print-canonical` for compact output matching `INDEX.canonical.json`
+  - 6 regression tests enforce determinism contract
+
+- **Evidence Index Determinism** (PRs #78, #79)
+  - Index ordering now uses `(kind, id, canonical_path)` for environment stability
+  - Removed `generated_at_utc` field (determinism contract v0.6.0)
+  - Added `test_evidence_index_determinism.py` with 6 contract tests
+
+### Added
+
+- **Evidence Contract Check Wrapper**
+  - `scripts/ops/evidence_contract_check.py` — one-command cross-platform verification
+  - Runs index check, determinism tests, and print contract verification
+
+### Documentation
+
+- Updated `ops/evidence/README.md` with v0.6.0 contract details
+- Documented `--print` vs `--print-canonical` usage
+- Added regression test reference table
+
+---
+
 ## [0.10.0] - Unreleased
 
 ### Added
