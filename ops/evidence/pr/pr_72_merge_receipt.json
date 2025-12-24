@@ -1,0 +1,12 @@
+{
+  "baseRefName": "main",
+  "headRefName": "feat/netopspack-release-hardening",
+  "mergeCommit": {
+    "oid": "c695a0826490e15a68da5c292cda345812e9b7d9"
+  },
+  "mergedAt": "2025-12-24T14:00:23Z",
+  "number": 72,
+  "state": "MERGED",
+  "title": "feat(netopspack): repo-root execution contract + release hardening",
+  "url": "https://github.com/iamnortey/ninobyte/pull/72"
+}
