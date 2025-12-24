@@ -1,0 +1,10 @@
+This is a sample configuration file for compliance testing.
+It contains some safe lines and some sensitive patterns.
+
+AWS credentials found: AKIAIOSFODNN7EXAMPLE
+Contact email: user@example.com
+Another safe line here.
+-----BEGIN PRIVATE KEY-----
+MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQC7...
+-----END PRIVATE KEY-----
+End of file.
