@@ -1,0 +1,12 @@
+{
+  "baseRefName": "main",
+  "headRefName": "feat/compliancepack-scaffold",
+  "mergeCommit": {
+    "oid": "4cc6fa1e72c7782b9886def8fa45688d2da6fe27"
+  },
+  "mergedAt": "2025-12-24T16:23:48Z",
+  "number": 74,
+  "state": "MERGED",
+  "title": "feat(compliancepack): MVP scaffold (contract-first)",
+  "url": "https://github.com/iamnortey/ninobyte/pull/74"
+}
