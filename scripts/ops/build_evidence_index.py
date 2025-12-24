@@ -12,10 +12,11 @@ Contract (v0.6.0):
 - Index only changes when underlying evidence set changes
 
 Usage:
-    python3 scripts/ops/build_evidence_index.py          # --write (default)
-    python3 scripts/ops/build_evidence_index.py --write  # regenerate artifacts
-    python3 scripts/ops/build_evidence_index.py --check  # byte-for-byte validation
-    python3 scripts/ops/build_evidence_index.py --print  # print canonical to stdout
+    python3 scripts/ops/build_evidence_index.py                 # --write (default)
+    python3 scripts/ops/build_evidence_index.py --write         # regenerate artifacts
+    python3 scripts/ops/build_evidence_index.py --check         # byte-for-byte validation
+    python3 scripts/ops/build_evidence_index.py --print         # print INDEX.json to stdout
+    python3 scripts/ops/build_evidence_index.py --print-canonical  # print INDEX.canonical.json to stdout
 
 Exit codes:
     0 - Success (write completed or check passed)
@@ -346,7 +347,13 @@ def main() -> int:
         "--print",
         action="store_true",
         dest="print_mode",
-        help="Print canonical JSON to stdout (for diff verification)",
+        help="Print INDEX.json content to stdout (byte-for-byte match)",
+    )
+    parser.add_argument(
+        "--print-canonical",
+        action="store_true",
+        dest="print_canonical_mode",
+        help="Print INDEX.canonical.json content to stdout (compact)",
     )
 
     args = parser.parse_args()
@@ -364,9 +371,14 @@ def main() -> int:
             print(f"  ❌ {error}", file=sys.stderr)
         return 1
 
-    # Handle --print mode (quiet, just output canonical JSON)
+    # Handle --print mode (quiet, just output human-readable JSON matching INDEX.json)
     if args.print_mode:
-        print(canonicalize(index_data), end="")
+        sys.stdout.write(format_human_readable(index_data))
+        return 0
+
+    # Handle --print-canonical mode (quiet, just output compact JSON matching INDEX.canonical.json)
+    if args.print_canonical_mode:
+        sys.stdout.write(canonicalize(index_data))
         return 0
 
     # Normal output header
