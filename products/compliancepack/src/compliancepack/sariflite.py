@@ -76,14 +76,14 @@ class SarifLiteReport(TypedDict):
 
 def _finding_to_result(
     finding: FindingDict,
-    input_path: str,
+    default_input_path: str,
 ) -> SarifResult:
     """
     Convert a CompliancePack finding to a SARIF-lite result.
 
     Args:
         finding: CompliancePack finding dict
-        input_path: Path to input file (for locations)
+        default_input_path: Default path for locations (single-file mode)
 
     Returns:
         SARIF-lite result dict
@@ -91,15 +91,18 @@ def _finding_to_result(
     # Build locations from samples
     locations: List[SarifLocation] = []
     for sample in finding["samples"]:
+        # Multi-file mode: samples have "file" field
+        # Single-file mode: use default_input_path
+        file_path = sample.get("file", default_input_path)
         locations.append({
-            "file": input_path,
+            "file": file_path,
             "line": sample["line"],
             "col_start": sample["col_start"],
             "col_end": sample["col_end"],
         })
 
-    # Sort locations for determinism
-    locations.sort(key=lambda loc: (loc["line"], loc["col_start"]))
+    # Sort locations for determinism (by file, then line, then col)
+    locations.sort(key=lambda loc: (loc["file"], loc["line"], loc["col_start"]))
 
     return {
         "ruleId": finding["id"],
@@ -142,19 +145,31 @@ def render_sariflite(
     Returns:
         SARIF-lite report dict ready for JSON serialization
     """
+    # Determine input path (single-file) or inputs (multi-file)
+    # Multi-file mode uses "inputs" array, single-file uses "input_path"
+    if "inputs" in report:
+        # Multi-file mode
+        input_path = ",".join(sorted(report["inputs"]))
+        default_file_path = report["inputs"][0] if report["inputs"] else ""
+    else:
+        # Single-file mode
+        input_path = report["input_path"]
+        default_file_path = input_path
+
     # Convert findings to results
     results: List[SarifResult] = []
     for finding in report["findings"]:
-        results.append(_finding_to_result(finding, report["input_path"]))
+        results.append(_finding_to_result(finding, default_file_path))
 
     # Sort results by (level, ruleId, first location) for determinism
     def result_sort_key(r: SarifResult) -> tuple:
         # level ordering: error < warning < note
         level_order = {"error": 0, "warning": 1, "note": 2}
-        first_loc = r["locations"][0] if r["locations"] else {"line": 0, "col_start": 0}
+        first_loc = r["locations"][0] if r["locations"] else {"file": "", "line": 0, "col_start": 0}
         return (
             level_order.get(r["level"], 3),
             r["ruleId"],
+            first_loc.get("file", ""),
             first_loc["line"],
             first_loc["col_start"],
         )
@@ -171,7 +186,7 @@ def render_sariflite(
         },
         "runs": [
             {
-                "input_path": report["input_path"],
+                "input_path": input_path,
                 "policy_path": report["policy_path"],
                 "generated_at_utc": report["generated_at_utc"],
                 "redaction_applied": report["redaction_applied"],
