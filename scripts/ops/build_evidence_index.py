@@ -6,10 +6,16 @@ Discovers all canonical evidence files and produces:
 - ops/evidence/INDEX.canonical.json (deterministic, compact)
 - ops/evidence/INDEX.canonical.json.sha256 (integrity checksum)
 
+Contract (v0.6.0):
+- Canonical ordering: (kind, id, canonical_path) - stable across environments
+- No timestamps in index artifacts (generated_at_utc removed for determinism)
+- Index only changes when underlying evidence set changes
+
 Usage:
     python3 scripts/ops/build_evidence_index.py          # --write (default)
     python3 scripts/ops/build_evidence_index.py --write  # regenerate artifacts
     python3 scripts/ops/build_evidence_index.py --check  # byte-for-byte validation
+    python3 scripts/ops/build_evidence_index.py --print  # print canonical to stdout
 
 Exit codes:
     0 - Success (write completed or check passed)
@@ -188,7 +194,6 @@ def build_index(repo_root: Path) -> Tuple[Dict[str, Any], List[str]]:
     errors = []
     items = []
     counts: Dict[str, int] = {}
-    latest_timestamp: Optional[str] = None
 
     canonical_files = discover_canonical_files(repo_root)
 
@@ -219,13 +224,8 @@ def build_index(repo_root: Path) -> Tuple[Dict[str, Any], List[str]]:
         timestamp = extract_timestamp_from_receipt(data, kind)
         source_ref = extract_source_ref(data, kind)
 
-        # Determine sort_timestamp
+        # Determine sort_timestamp (for human reference, not for sorting)
         sort_timestamp = timestamp if timestamp else UNKNOWN_TIMESTAMP_SENTINEL
-
-        # Track latest timestamp for generated_at_utc
-        if timestamp:
-            if latest_timestamp is None or timestamp > latest_timestamp:
-                latest_timestamp = timestamp
 
         # Count by kind
         counts[kind] = counts.get(kind, 0) + 1
@@ -250,18 +250,15 @@ def build_index(repo_root: Path) -> Tuple[Dict[str, Any], List[str]]:
 
         items.append(item)
 
-    # Sort items deterministically: (kind, sort_timestamp_utc, canonical_path)
-    items.sort(key=lambda x: (x["kind"], x["sort_timestamp_utc"], x["canonical_path"]))
+    # Sort items deterministically: (kind, id, canonical_path)
+    # This ordering is stable across environments regardless of filesystem traversal order
+    items.sort(key=lambda x: (x["kind"], x["id"], x["canonical_path"]))
 
-    # Build index
+    # Build index (no generated_at_utc - determinism contract v0.6.0)
     index_data: Dict[str, Any] = {
         "counts": counts,
         "items": items,
     }
-
-    # Add generated_at_utc only if we have timestamps
-    if latest_timestamp:
-        index_data["generated_at_utc"] = latest_timestamp
 
     return index_data, errors
 
@@ -345,6 +342,12 @@ def main() -> int:
         action="store_true",
         help="Check if artifacts match regenerated versions (byte-for-byte)",
     )
+    parser.add_argument(
+        "--print",
+        action="store_true",
+        dest="print_mode",
+        help="Print canonical JSON to stdout (for diff verification)",
+    )
 
     args = parser.parse_args()
 
@@ -352,19 +355,24 @@ def main() -> int:
     script_path = Path(__file__).resolve()
     repo_root = script_path.parent.parent.parent
 
-    print("=" * 60)
-    print("Evidence Index Builder")
-    print("=" * 60)
-
     # Build index
     index_data, errors = build_index(repo_root)
 
     if errors:
-        print("\nErrors during discovery:")
+        print("Errors during discovery:", file=sys.stderr)
         for error in errors:
-            print(f"  ❌ {error}")
-        print()
+            print(f"  ❌ {error}", file=sys.stderr)
         return 1
+
+    # Handle --print mode (quiet, just output canonical JSON)
+    if args.print_mode:
+        print(canonicalize(index_data), end="")
+        return 0
+
+    # Normal output header
+    print("=" * 60)
+    print("Evidence Index Builder")
+    print("=" * 60)
 
     # Report counts
     print("\nDiscovered evidence:")
@@ -395,9 +403,6 @@ def main() -> int:
         print(f"\n✅ Wrote: {INDEX_JSON_PATH}")
         print(f"✅ Wrote: {INDEX_CANONICAL_PATH}")
         print(f"✅ Wrote: {INDEX_CHECKSUM_PATH}")
-
-        if index_data.get("generated_at_utc"):
-            print(f"\ngenerated_at_utc: {index_data['generated_at_utc']}")
 
         return 0
 

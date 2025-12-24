@@ -86,6 +86,57 @@ Before creating a release tag:
 | Release | `vMAJOR.MINOR.PATCH` | `v0.1.5` |
 | Pre-release | `vMAJOR.MINOR.PATCH-rc.N` | `v0.2.0-rc.1` |
 
+## Evidence PR Workflow Guidelines
+
+When creating evidence PRs (merge receipts, release proofs):
+
+### Prefer New Commits Over Amend
+
+Once a PR is created, prefer adding **new commits** rather than using `--amend`:
+
+```bash
+# Preferred: Add a new fix commit
+git add ops/evidence/
+git commit -m "fix: regenerate evidence index with canonical ordering"
+git push
+
+# Avoid: Force-pushing amended commits
+git commit --amend  # Only if CI is blocked by deterministic check
+git push --force    # Creates audit trail confusion
+```
+
+**Rationale:**
+- New commits preserve full audit trail
+- Force-pushes obscure what changed
+- CI reruns are cheaper than debugging discrepancies
+
+### When Force-Push Is Acceptable
+
+Use `--amend + --force` only if:
+1. CI is blocked by a deterministic check failure (e.g., INDEX.json drift)
+2. The original commit message needs correction before merge
+3. No reviewers have started reviewing
+
+### Evidence Index Determinism
+
+The evidence index (`ops/evidence/INDEX.json`) is rebuilt deterministically:
+
+```bash
+# Regenerate index artifacts
+python3 scripts/ops/build_evidence_index.py --write
+
+# Verify determinism (should pass without changes)
+python3 scripts/ops/build_evidence_index.py --check
+
+# Run contract tests
+python3 scripts/ops/test_evidence_index_determinism.py
+```
+
+**Contract (v0.6.0):**
+- Ordering: `(kind, id, canonical_path)` - stable across environments
+- No `generated_at_utc` in index (removed for determinism)
+- Index only changes when underlying evidence set changes
+
 ## Related Documents
 
 - [Claude Code Plugin Runbook](./claude_code_plugin_runbook.md)
