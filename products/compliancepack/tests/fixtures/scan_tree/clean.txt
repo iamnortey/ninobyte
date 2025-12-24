@@ -1,0 +1,3 @@
+This is a clean file with no secrets.
+Just some regular text content.
+Nothing to see here.

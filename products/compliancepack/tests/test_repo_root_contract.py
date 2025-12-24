@@ -250,3 +250,100 @@ class TestRepoRootErrorCases:
             "--fail-on", "invalid",
         )
         assert result.returncode == 2
+
+
+class TestRepoRootDirectoryScan:
+    """Test directory scanning from repo root."""
+
+    def test_directory_scan_from_repo_root(self):
+        """Directory scan should work from repo root."""
+        fixtures = get_compliancepack_root() / "tests" / "fixtures"
+
+        result = run_from_repo_root(
+            "check",
+            "--input", str(fixtures),
+            "--pack", "secrets.v1",
+            "--fixed-time", "2025-01-01T00:00:00Z",
+        )
+
+        assert result.returncode in (0, 3)
+        output = json.loads(result.stdout)
+        assert output["format"] == "compliancepack.check.v1"
+        assert "inputs" in output
+        assert "scan_stats" in output
+
+    def test_directory_scan_determinism_from_repo_root(self):
+        """Directory scan should be deterministic from repo root."""
+        fixtures = get_compliancepack_root() / "tests" / "fixtures"
+
+        outputs = []
+        for _ in range(3):
+            result = run_from_repo_root(
+                "check",
+                "--input", str(fixtures),
+                "--pack", "secrets.v1",
+                "--fixed-time", "2025-01-01T00:00:00Z",
+            )
+            assert result.returncode in (0, 3)
+            outputs.append(result.stdout)
+
+        assert len(set(outputs)) == 1, "Directory scan should be deterministic"
+
+    def test_extension_filter_from_repo_root(self):
+        """Extension filter should work from repo root."""
+        fixtures = get_compliancepack_root() / "tests" / "fixtures"
+
+        result = run_from_repo_root(
+            "check",
+            "--input", str(fixtures),
+            "--pack", "secrets.v1",
+            "--include-ext", ".txt",
+            "--fixed-time", "2025-01-01T00:00:00Z",
+        )
+
+        assert result.returncode in (0, 3)
+        output = json.loads(result.stdout)
+        # Should only scan .txt files
+        assert output["scan_stats"]["files_scanned"] >= 1
+
+    def test_max_files_from_repo_root(self):
+        """Max files limit should work from repo root."""
+        fixtures = get_compliancepack_root() / "tests" / "fixtures"
+
+        result = run_from_repo_root(
+            "check",
+            "--input", str(fixtures),
+            "--pack", "secrets.v1",
+            "--max-files", "2",
+            "--fixed-time", "2025-01-01T00:00:00Z",
+        )
+
+        assert result.returncode in (0, 3)
+        output = json.loads(result.stdout)
+        assert output["scan_stats"]["files_scanned"] <= 2
+
+    def test_max_bytes_per_file_from_repo_root(self):
+        """Max bytes per file should work from repo root."""
+        fixtures = get_compliancepack_root() / "tests" / "fixtures"
+        input_file = fixtures / "sample_input.txt"
+
+        result = run_from_repo_root(
+            "check",
+            "--input", str(input_file),
+            "--pack", "secrets.v1",
+            "--max-bytes-per-file", "100",
+            "--fixed-time", "2025-01-01T00:00:00Z",
+        )
+
+        # Should still work, just with truncated file content
+        assert result.returncode in (0, 3)
+
+    def test_new_cli_flags_in_help(self):
+        """New CLI flags should appear in --help."""
+        result = run_from_repo_root("check", "--help")
+
+        assert result.returncode == 0
+        assert "--max-files" in result.stdout
+        assert "--max-bytes-per-file" in result.stdout
+        assert "--include-ext" in result.stdout
+        assert "--follow-symlinks" in result.stdout

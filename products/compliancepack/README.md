@@ -75,7 +75,7 @@ Analyze configuration files for compliance violations.
 
 ```bash
 PYTHONPATH=products/compliancepack/src python3 -m compliancepack check \
-  --input <path>           # Required: path to file (read-only)
+  --input <path>           # Required: path to file or directory (repeatable)
   --pack <name>            # Use built-in pack (e.g., secrets.v1, pii.v1)
   --policy <path>          # OR: use custom JSON policy file
   --fixed-time <ISO8601Z>  # Optional: deterministic timestamp
@@ -86,6 +86,11 @@ PYTHONPATH=products/compliancepack/src python3 -m compliancepack check \
   --max-findings <N>       # Limit output findings (0 = unlimited)
   --exit-zero              # Force exit code 0 regardless of findings
   --list-packs             # List available packs and exit
+  # Directory scanning options:
+  --max-files <N>          # Max files to scan (default: 5000)
+  --max-bytes-per-file <N> # Max bytes per file (default: 1000000)
+  --include-ext <exts>     # Extension filter (e.g., .env,.txt,.log)
+  --follow-symlinks        # Follow symlinks (default: OFF)
 ```
 
 **Note**: Exactly one of `--pack` or `--policy` is required (mutually exclusive).
@@ -95,6 +100,71 @@ PYTHONPATH=products/compliancepack/src python3 -m compliancepack check \
 **Formats**:
 - `compliancepack.check.v1` - Full compliance report (default)
 - `compliancepack.sariflite.v1` - SARIF-adjacent format for code review tools
+
+## Directory Scan Contract
+
+Scan directories or multiple inputs for compliance violations:
+
+```bash
+# Scan a directory
+PYTHONPATH=products/compliancepack/src python3 -m compliancepack check \
+  --input products/compliancepack/tests/fixtures \
+  --pack secrets.v1 \
+  --fail-on high \
+  --fixed-time "2025-01-01T00:00:00Z"
+
+# Scan with extension filter
+PYTHONPATH=products/compliancepack/src python3 -m compliancepack check \
+  --input /path/to/config/dir \
+  --pack secrets.v1 \
+  --include-ext ".env,.txt,.log"
+
+# Multiple inputs
+PYTHONPATH=products/compliancepack/src python3 -m compliancepack check \
+  --input /path/to/dir1 \
+  --input /path/to/dir2 \
+  --pack secrets.v1
+```
+
+### Directory Scan Output Schema
+
+When scanning directories, the output includes additional fields:
+
+```json
+{
+  "format": "compliancepack.check.v1",
+  "inputs": ["/path/to/dir"],
+  "scan_stats": {
+    "files_scanned": 10,
+    "files_with_findings": 3,
+    "files_skipped": {"extension_filtered": 5}
+  },
+  "findings": [
+    {
+      "id": "SEC001",
+      "samples": [
+        {"file": "/path/to/dir/config.env", "line": 3, "col_start": 0, ...}
+      ]
+    }
+  ]
+}
+```
+
+### Security Boundaries
+
+| Control | Behavior |
+|---------|----------|
+| Path traversal | Blocked (realpath canonicalization) |
+| Symlinks | Skipped by default; `--follow-symlinks` enables with boundary check |
+| Max files | Default 5000; prevents runaway scans |
+| Max bytes/file | Default 1MB; prevents memory exhaustion |
+
+### Determinism Guarantees
+
+- Files enumerated in sorted order (stable across OS/filesystem)
+- Findings sorted by: severity rank desc -> id asc -> file asc -> line asc
+- Samples sorted by: file asc -> line asc -> col_start asc
+- With `--fixed-time`, output is byte-for-byte identical
 
 ## Built-in Packs
 

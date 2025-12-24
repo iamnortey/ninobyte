@@ -4,7 +4,7 @@ CompliancePack CLI implementation.
 Provides the `check` subcommand for compliance analysis.
 
 Contract:
-- --input <path>: Required, read-only file path
+- --input <path>: Required, read-only file or directory path (repeatable)
 - --policy <path> OR --pack <name>: Exactly one required (mutually exclusive)
 - --list-packs: List available packs and exit
 - --fixed-time <ISO8601Z>: Optional, deterministic timestamp
@@ -13,6 +13,10 @@ Contract:
 - --format <format>: Output format (default: compliancepack.check.v1)
 - --max-findings <N>: Limit output findings (optional)
 - --exit-zero: Force exit code 0 regardless of findings
+- --max-files <N>: Maximum files to scan (default: 5000)
+- --max-bytes-per-file <N>: Maximum bytes per file (default: 1000000)
+- --include-ext <exts>: Comma-separated extensions to include (e.g., .env,.txt)
+- --follow-symlinks: Follow symlinks during directory traversal (default: OFF)
 - Output: JSON to stdout, stable formatting
 
 Exit codes:
@@ -27,12 +31,18 @@ import json
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional, Set
 
 from compliancepack import __version__
-from compliancepack.engine import run_check
+from compliancepack.engine import run_check, run_check_multi
 from compliancepack.packs import PackError, list_packs, load_pack
 from compliancepack.policy import SEVERITY_LEVELS, PolicyValidationError, load_policy_file
+from compliancepack.scanner import (
+    ScanError,
+    collect_targets,
+    read_file_limited,
+    summarize_skipped,
+)
 from compliancepack.sariflite import render_sariflite
 from compliancepack.threshold import (
     EXIT_OK,
@@ -46,6 +56,10 @@ from compliancepack.threshold import (
 # Valid output formats
 OUTPUT_FORMATS = ("compliancepack.check.v1", "compliancepack.sariflite.v1")
 
+# Default limits
+DEFAULT_MAX_FILES = 5000
+DEFAULT_MAX_BYTES_PER_FILE = 1_000_000
+
 
 def _get_timestamp(fixed_time: Optional[str] = None) -> str:
     """Get timestamp for output, using fixed time if provided."""
@@ -58,6 +72,21 @@ def _output_json(data: Dict[str, Any]) -> None:
     """Output JSON with stable formatting (deterministic)."""
     json_str = json.dumps(data, sort_keys=True, separators=(",", ": "), ensure_ascii=False)
     print(json_str)
+
+
+def _parse_extensions(ext_str: Optional[str]) -> Optional[Set[str]]:
+    """Parse comma-separated extension string into set."""
+    if not ext_str:
+        return None
+    extensions = set()
+    for ext in ext_str.split(","):
+        ext = ext.strip()
+        if ext:
+            # Ensure leading dot
+            if not ext.startswith("."):
+                ext = "." + ext
+            extensions.add(ext.lower())
+    return extensions if extensions else None
 
 
 def cmd_list_packs() -> int:
@@ -74,22 +103,36 @@ def cmd_list_packs() -> int:
     return EXIT_OK
 
 
+def _is_single_file_input(inputs: List[str]) -> bool:
+    """Check if input is a single file (not directory)."""
+    if len(inputs) != 1:
+        return False
+    path = Path(inputs[0])
+    return path.exists() and path.is_file()
+
+
 def cmd_check(args: argparse.Namespace) -> int:
     """Execute the 'check' subcommand."""
     # Handle --list-packs first
     if getattr(args, "list_packs", False):
         return cmd_list_packs()
 
-    input_path = Path(args.input)
+    # Get inputs (can be multiple via repeated --input)
+    inputs = getattr(args, "input", None) or []
+    if isinstance(inputs, str):
+        inputs = [inputs]
 
-    # Validate input file exists (read-only check)
-    if not input_path.exists():
-        sys.stderr.write(f"Error: Input file not found: {args.input}\n")
-        return EXIT_RUNTIME
+    if not inputs:
+        sys.stderr.write("Error: --input is required for check command\n")
+        return EXIT_USAGE
 
-    if not input_path.is_file():
-        sys.stderr.write(f"Error: Input path is not a file: {args.input}\n")
-        return EXIT_RUNTIME
+    # Validate at least one input exists
+    existing_inputs = []
+    for inp in inputs:
+        if not Path(inp).exists():
+            sys.stderr.write(f"Error: Input path not found: {inp}\n")
+            return EXIT_RUNTIME
+        existing_inputs.append(inp)
 
     # Determine policy source: --policy or --pack (mutually exclusive)
     policy = getattr(args, "policy", None)
@@ -127,6 +170,24 @@ def cmd_check(args: argparse.Namespace) -> int:
         sys.stderr.write("Error: --max-findings must be a non-negative integer\n")
         return EXIT_USAGE
 
+    # Validate --max-files
+    max_files = getattr(args, "max_files", DEFAULT_MAX_FILES)
+    if max_files < 1:
+        sys.stderr.write("Error: --max-files must be >= 1\n")
+        return EXIT_USAGE
+
+    # Validate --max-bytes-per-file
+    max_bytes = getattr(args, "max_bytes_per_file", DEFAULT_MAX_BYTES_PER_FILE)
+    if max_bytes < 1:
+        sys.stderr.write("Error: --max-bytes-per-file must be >= 1\n")
+        return EXIT_USAGE
+
+    # Parse extension filter
+    include_extensions = _parse_extensions(getattr(args, "include_ext", None))
+
+    # Get symlink setting
+    follow_symlinks = getattr(args, "follow_symlinks", False)
+
     # Load policy from file or pack
     if policy:
         policy_path = Path(policy)
@@ -163,14 +224,63 @@ def cmd_check(args: argparse.Namespace) -> int:
     # Get timestamp
     timestamp = _get_timestamp(args.fixed_time)
 
-    # Run check
-    result = run_check(
-        input_path=str(input_path),
-        policy_file=policy_file,
-        policy_path=policy_path_str,
-        generated_at_utc=timestamp,
-        apply_redaction=args.redact,
-    )
+    # Check if single file input (backward compatible path)
+    if _is_single_file_input(existing_inputs):
+        input_path = Path(existing_inputs[0])
+
+        # Run single-file check (original behavior)
+        result = run_check(
+            input_path=str(input_path),
+            policy_file=policy_file,
+            policy_path=policy_path_str,
+            generated_at_utc=timestamp,
+            apply_redaction=args.redact,
+        )
+    else:
+        # Multi-file / directory scan path
+        try:
+            input_paths = [Path(p) for p in existing_inputs]
+            files, skipped = collect_targets(
+                inputs=input_paths,
+                include_extensions=include_extensions,
+                follow_symlinks=follow_symlinks,
+                max_files=max_files,
+            )
+        except ValueError as e:
+            sys.stderr.write(f"Error: {e}\n")
+            return EXIT_USAGE
+        except ScanError as e:
+            sys.stderr.write(f"Error: {e}\n")
+            return EXIT_RUNTIME
+
+        if not files:
+            sys.stderr.write("Error: No files found to scan\n")
+            return EXIT_RUNTIME
+
+        # Read file contents
+        file_contents: Dict[str, str] = {}
+        for file_path in files:
+            try:
+                content, was_truncated = read_file_limited(file_path, max_bytes)
+                file_contents[str(file_path)] = content
+            except ScanError as e:
+                # Skip files that can't be read, add to skipped
+                skipped.append((file_path, "read_error"))
+
+        # Summarize skipped files
+        skipped_summary = summarize_skipped(skipped) if skipped else None
+
+        # Run multi-file check
+        result = run_check_multi(
+            files=files,
+            file_contents=file_contents,
+            input_roots=existing_inputs,
+            policy_file=policy_file,
+            policy_path=policy_path_str,
+            generated_at_utc=timestamp,
+            apply_redaction=args.redact,
+            files_skipped_summary=skipped_summary,
+        )
 
     # Calculate violations and exit code
     violation_count, _ = count_violations(result["findings"], fail_on)
@@ -231,7 +341,9 @@ def create_parser() -> argparse.ArgumentParser:
     )
     check_parser.add_argument(
         "--input",
-        help="Path to input file (read-only)",
+        action="append",
+        metavar="PATH",
+        help="Path to input file or directory (repeatable, read-only)",
     )
 
     # Policy source: mutually exclusive --policy and --pack
@@ -306,6 +418,33 @@ def create_parser() -> argparse.ArgumentParser:
         action="store_true",
         default=False,
         help="Force exit code 0 regardless of findings (useful for local runs)",
+    )
+
+    # Directory scanning controls
+    check_parser.add_argument(
+        "--max-files",
+        metavar="N",
+        type=int,
+        default=DEFAULT_MAX_FILES,
+        help=f"Maximum files to scan (default: {DEFAULT_MAX_FILES})",
+    )
+    check_parser.add_argument(
+        "--max-bytes-per-file",
+        metavar="N",
+        type=int,
+        default=DEFAULT_MAX_BYTES_PER_FILE,
+        help=f"Maximum bytes per file (default: {DEFAULT_MAX_BYTES_PER_FILE})",
+    )
+    check_parser.add_argument(
+        "--include-ext",
+        metavar="EXTS",
+        help="Comma-separated extensions to include (e.g., .env,.txt,.log)",
+    )
+    check_parser.add_argument(
+        "--follow-symlinks",
+        action="store_true",
+        default=False,
+        help="Follow symlinks during directory traversal (default: OFF)",
     )
 
     return parser
