@@ -329,7 +329,7 @@ def validate_netopspack_cli_contract(netopspack_root: Path) -> bool:
     """
     Validate NetOpsPack CLI contract via subprocess smoke test.
 
-    Runs canonical command and verifies:
+    Runs canonical command FROM PRODUCT DIRECTORY and verifies:
     - Exit code 0
     - Output parses as JSON
     - Contains "format": "syslog"
@@ -340,7 +340,7 @@ def validate_netopspack_cli_contract(netopspack_root: Path) -> bool:
         log_fail(f"Fixture not found for CLI smoke test: {_rel_path(fixture_path)}")
         return False
 
-    # Run canonical command
+    # Run canonical command from product directory
     cmd = [
         sys.executable,
         '-m',
@@ -403,9 +403,166 @@ def validate_netopspack_cli_contract(netopspack_root: Path) -> bool:
         all_passed = False
 
     if all_passed:
-        log_ok("NetOpsPack CLI contract smoke test passed")
+        log_ok("NetOpsPack CLI contract (product-local) passed")
 
     return all_passed
+
+
+def validate_netopspack_repo_root_contract(repo_root: Path) -> bool:
+    """
+    Validate NetOpsPack CLI contract FROM REPO ROOT.
+
+    This ensures the canonical repo-root invocation works without editable install:
+        PYTHONPATH=products/netopspack/src python3 -m netopspack diagnose ...
+
+    Tests all three formats (syslog, nginx, haproxy) using repo-root paths.
+    """
+    netopspack_src = repo_root / 'products' / 'netopspack' / 'src'
+    fixtures_dir = repo_root / 'products' / 'netopspack' / 'tests' / 'fixtures'
+
+    # Test cases: (format, fixture_name)
+    test_cases = [
+        ('syslog', 'syslog.log'),
+        ('nginx', 'nginx.log'),
+        ('haproxy', 'haproxy.log'),
+    ]
+
+    all_passed = True
+
+    for log_format, fixture_name in test_cases:
+        fixture_path = fixtures_dir / fixture_name
+        if not fixture_path.exists():
+            log_fail(f"Repo-root fixture not found: {_rel_path(fixture_path)}")
+            all_passed = False
+            continue
+
+        # Repo-root canonical command
+        cmd = [
+            sys.executable,
+            '-m',
+            'netopspack',
+            'diagnose',
+            '--format', log_format,
+            '--input', str(fixture_path),
+            '--fixed-time', '2025-01-01T00:00:00Z',
+            '--limit', '1',
+        ]
+
+        env = {
+            **dict(os.environ),
+            'PYTHONPATH': str(netopspack_src),
+        }
+
+        try:
+            result = subprocess.run(
+                cmd,
+                cwd=repo_root,  # Run from repo root!
+                capture_output=True,
+                text=True,
+                env=env,
+                timeout=30,
+            )
+        except subprocess.TimeoutExpired:
+            log_fail(f"Repo-root CLI test ({log_format}) timed out (30s)")
+            all_passed = False
+            continue
+        except Exception as e:
+            log_fail(f"Repo-root CLI test ({log_format}) failed to run: {e}")
+            all_passed = False
+            continue
+
+        # Check exit code
+        if result.returncode != 0:
+            log_fail(f"Repo-root CLI test ({log_format}) exit code {result.returncode}")
+            if result.stderr:
+                print(f"    stderr: {result.stderr[:300]}")
+            all_passed = False
+            continue
+
+        # Check JSON output
+        try:
+            output = json.loads(result.stdout)
+        except json.JSONDecodeError as e:
+            log_fail(f"Repo-root CLI test ({log_format}) invalid JSON: {e}")
+            all_passed = False
+            continue
+
+        # Validate contract fields
+        if output.get('format') != log_format:
+            log_fail(f"Repo-root CLI test ({log_format}): wrong format in output")
+            all_passed = False
+            continue
+
+        if output.get('generated_at_utc') != '2025-01-01T00:00:00Z':
+            log_fail(f"Repo-root CLI test ({log_format}): wrong timestamp in output")
+            all_passed = False
+            continue
+
+    if all_passed:
+        log_ok("NetOpsPack repo-root CLI contract passed (all 3 formats)")
+
+    return all_passed
+
+
+def validate_netopspack_pytest(netopspack_root: Path) -> bool:
+    """
+    Validate NetOpsPack pytest suite passes.
+
+    This runs the product-local pytest and validates all tests pass.
+    """
+    if not netopspack_root.exists():
+        log_info("NetOpsPack not found, skipping pytest validation")
+        return True
+
+    cmd = [
+        sys.executable,
+        '-m',
+        'pytest',
+        '-q',
+        '--tb=short',
+    ]
+
+    env = {
+        **dict(os.environ),
+        'PYTHONPATH': str(netopspack_root / 'src'),
+    }
+
+    try:
+        result = subprocess.run(
+            cmd,
+            cwd=netopspack_root,
+            capture_output=True,
+            text=True,
+            env=env,
+            timeout=120,
+        )
+    except subprocess.TimeoutExpired:
+        log_fail("NetOpsPack pytest timed out (120s)")
+        return False
+    except Exception as e:
+        log_fail(f"NetOpsPack pytest failed to run: {e}")
+        return False
+
+    # Parse test results from output
+    # pytest -q output ends with "X passed in Y.YYs" or similar
+    if result.returncode != 0:
+        log_fail(f"NetOpsPack pytest failed (exit code {result.returncode})")
+        # Show last 10 lines of output
+        lines = result.stdout.strip().split('\n')
+        for line in lines[-10:]:
+            print(f"    {line}")
+        return False
+
+    # Extract passed count from output
+    import re
+    match = re.search(r'(\d+) passed', result.stdout)
+    if match:
+        passed_count = int(match.group(1))
+        log_ok(f"NetOpsPack pytest passed ({passed_count} tests)")
+    else:
+        log_ok("NetOpsPack pytest passed")
+
+    return True
 
 
 # =============================================================================
@@ -422,7 +579,7 @@ def main() -> int:
     _REPO_ROOT = repo_root
 
     print(f"\n{'='*60}")
-    print("NetOpsPack Governance Validation (v0.9.0)")
+    print("NetOpsPack Governance Validation (v0.9.1)")
     print(f"{'='*60}\n")
 
     all_passed = True
@@ -432,28 +589,38 @@ def main() -> int:
     netopspack_src = netopspack_root / 'src' / 'netopspack'
 
     # 1. Directory structure and governance docs
-    print("--- Directory + Governance Docs ---")
+    print("--- [1/7] Directory + Governance Docs ---")
     if not validate_netopspack_structure(netopspack_root):
         all_passed = False
 
     # 2. Security posture: no networking imports
-    print("\n--- Security Posture: No Networking ---")
+    print("\n--- [2/7] Security Posture: No Networking ---")
     if not validate_netopspack_no_networking(netopspack_src):
         all_passed = False
 
     # 3. Security posture: no shell execution
-    print("\n--- Security Posture: No Shell Execution ---")
+    print("\n--- [3/7] Security Posture: No Shell Execution ---")
     if not validate_netopspack_no_shell_execution(netopspack_src):
         all_passed = False
 
     # 4. No file write guarantee
-    print("\n--- No File Write Guarantee ---")
+    print("\n--- [4/7] No File Write Guarantee ---")
     if not validate_netopspack_no_file_writes(netopspack_src):
         all_passed = False
 
-    # 5. CLI contract smoke test
-    print("\n--- CLI Contract Smoke Test ---")
+    # 5. CLI contract smoke test (product-local)
+    print("\n--- [5/7] CLI Contract (Product-Local) ---")
     if not validate_netopspack_cli_contract(netopspack_root):
+        all_passed = False
+
+    # 6. CLI contract smoke test (repo-root)
+    print("\n--- [6/7] CLI Contract (Repo-Root) ---")
+    if not validate_netopspack_repo_root_contract(repo_root):
+        all_passed = False
+
+    # 7. Pytest suite
+    print("\n--- [7/7] Pytest Suite ---")
+    if not validate_netopspack_pytest(netopspack_root):
         all_passed = False
 
     # Summary

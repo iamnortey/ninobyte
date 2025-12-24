@@ -28,20 +28,45 @@ NetOpsPack is a **deterministic, offline-first** network log analysis toolkit de
 > Anaconda, system Python 2.x, or other non-standard installations. Always
 > use `python3` explicitly to ensure consistent behavior.
 
-### Recommended Invocation (No Install)
+### Canonical Invocation (From Repo Root)
 
-The canonical way to run NetOpsPack without installation:
+The recommended way to run NetOpsPack from the repository root:
 
 ```bash
-cd products/netopspack
-PYTHONPATH=src python3 -m netopspack diagnose --input tests/fixtures/sample_syslog.log --format syslog
+# From repo root (ninobyte/)
+PYTHONPATH=products/netopspack/src python3 -m netopspack diagnose \
+  --format syslog \
+  --input products/netopspack/tests/fixtures/syslog.log \
+  --fixed-time "2025-01-01T00:00:00Z" \
+  --limit 3
 ```
 
 This method:
+- Works from anywhere in the repo
 - Requires no `pip install`
-- Works immediately after `git clone`
 - Uses explicit `python3` for portability
-- Sets `PYTHONPATH` for reliable imports
+- Uses full repo-relative paths for fixtures
+
+### Product-Local Invocation
+
+When working within the NetOpsPack directory:
+
+```bash
+cd products/netopspack
+PYTHONPATH=src python3 -m netopspack diagnose \
+  --input tests/fixtures/syslog.log \
+  --format syslog
+```
+
+### Quick Import Check
+
+Verify NetOpsPack is importable without installation:
+
+```bash
+# From repo root
+PYTHONPATH=products/netopspack/src python3 -c "import netopspack; print(netopspack.__version__)"
+# Output: 0.9.0
+```
 
 ### Optional: Development Install
 
@@ -52,7 +77,7 @@ cd products/netopspack
 python3 -m pip install -e .
 
 # Then run without PYTHONPATH:
-python3 -m netopspack diagnose --input tests/fixtures/sample_syslog.log --format syslog
+python3 -m netopspack diagnose --input tests/fixtures/syslog.log --format syslog
 ```
 
 ## Commands
