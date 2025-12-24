@@ -2,7 +2,7 @@
   "counts": {
     "decision": 1,
     "pr": 24,
-    "validation": 1
+    "validation": 2
   },
   "items": [
     {
@@ -262,6 +262,16 @@
       "sort_timestamp_utc": "2025-12-23T01:59:16Z",
       "source_ref": "internal governance decision",
       "timestamp_utc": "2025-12-23T01:59:16Z"
+    },
+    {
+      "canonical_path": "ops/evidence/validation/validation_20251224_172751_evidence_index_v0.6.0.canonical.json",
+      "id": "validation_20251224_172751_evidence_index_v0.6.0",
+      "kind": "validation",
+      "sha256": "b7cf60950008ddfdf79e2ea5a2f064c0952e28846c240402551499b5a4de9ed5",
+      "sha256_path": "ops/evidence/validation/validation_20251224_172751_evidence_index_v0.6.0.canonical.json.sha256",
+      "sort_timestamp_utc": "2025-12-24T17:27:51Z",
+      "source_ref": "governance contract upgrade",
+      "timestamp_utc": "2025-12-24T17:27:51Z"
     }
   ]
 }
