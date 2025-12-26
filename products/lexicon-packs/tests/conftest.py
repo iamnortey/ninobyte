@@ -43,15 +43,3 @@ def invalid_csv_path(fixtures_dir: Path) -> Path:
 def ghana_core_path() -> Path:
     """Path to ghana-core pack."""
     return PRODUCT_ROOT / "packs" / "ghana-core"
-
-
-@pytest.fixture
-def legal_core_path() -> Path:
-    """Path to legal-core pack."""
-    return PRODUCT_ROOT / "packs" / "legal-core"
-
-
-@pytest.fixture
-def finance_core_path() -> Path:
-    """Path to finance-core pack."""
-    return PRODUCT_ROOT / "packs" / "finance-core"
