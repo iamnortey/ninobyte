@@ -1482,6 +1482,41 @@ def main() -> int:
     else:
         log_info("CompliancePack governance validator not found (skipping)")
 
+    # 8e. MicroEmployees governance validation (v0.13.0+)
+    # Canonical path: products/microemployees/
+    print("\n--- MicroEmployees Governance Validation (v0.13.0) ---")
+    microemployees_src = repo_root / 'products' / 'microemployees' / 'src' / 'microemployees'
+    if microemployees_src.exists():
+        import subprocess
+        import os
+        env = os.environ.copy()
+        env['PYTHONPATH'] = str(repo_root / 'products' / 'microemployees' / 'src')
+        # Run tests including security tests
+        result = subprocess.run(
+            [sys.executable, '-m', 'pytest', 'products/microemployees/tests/', '-q'],
+            cwd=repo_root,
+            capture_output=True,
+            text=True,
+            env=env,
+        )
+        if result.returncode == 0:
+            # Extract test count from output
+            for line in result.stdout.splitlines():
+                if 'passed' in line:
+                    log_ok(f"MicroEmployees tests passed: {line.strip()}")
+                    break
+            else:
+                log_ok("MicroEmployees tests passed")
+        else:
+            log_fail("MicroEmployees tests failed")
+            if result.stdout:
+                print(result.stdout)
+            if result.stderr:
+                print(result.stderr, file=sys.stderr)
+            all_passed = False
+    else:
+        log_info("MicroEmployees source not found (skipping)")
+
     # 9. Validation log cross-link enforcement (v0.4.0+)
     print("\n--- Validation Log Cross-Links (v0.4.0) ---")
     cross_link_validator = repo_root / 'scripts' / 'ci' / 'validate_validation_log_links.py'
