@@ -251,9 +251,67 @@ echo "=== Remote Branches ===" && git branch -r | wc -l
 
 ---
 
+## Default Loop (Claude Code Enterprise Mode)
+
+When using Claude Code for development, follow the enterprise delivery loop:
+
+```
+/enterprise → plan → implement → /audit → /compliance → /red-team → PR
+```
+
+### Step-by-Step
+
+1. **Enable Enterprise Mode**
+   ```
+   /enterprise
+   ```
+   Activates Safety Harness with approval-gated destructive operations.
+
+2. **Plan Phase**
+   - State your intent clearly
+   - Claude will produce a structured implementation plan
+   - Review and refine before proceeding
+
+3. **Implementation**
+   - Follow TDD where applicable
+   - Commit atomically
+   - Use conventional commit messages
+
+4. **Quality Gates**
+   ```
+   /audit        # Security + code quality review
+   /compliance   # Secrets, PII, licensing checks
+   /red-team     # Adversarial breakage analysis
+   ```
+
+5. **PR Creation**
+   - Include quality gate evidence in PR description
+   - Reference audit artifacts if available
+
+### Safety Harness Commands
+
+| Command | Purpose |
+|---------|---------|
+| `/enterprise` | Enable full Safety Harness |
+| `/vibe` | Switch to Rapid Vibe Mode (stamps required) |
+| `/status` | Show current mode + pending approvals |
+| `/change-plan` | Propose destructive operation |
+| `/approve APPROVE:<id>` | Approve a change plan |
+
+### Destructive Operations Requiring Approval
+
+- `git push`, `git push -f`
+- `rm`, `rm -rf`
+- `chmod`, `chown`
+- Database migrations
+- Infrastructure changes (terraform, kubectl)
+
+---
+
 ## Files Referenced
 
 - `scripts/ci/validate_artifacts.py` - Artifact validation
 - `products/mcp-servers/ninobyte-airgap/tests/` - AirGap tests
 - `products/opspack/tests/` - OpsPack tests
 - `ops/release/RELEASE_CHECKLIST.md` - Full release checklist
+- `ops/runbooks/VIBE_PILOT_RUNBOOK.md` - Enterprise delivery validation
