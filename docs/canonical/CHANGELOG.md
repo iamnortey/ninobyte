@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+**Tagging Policy**: See `docs/canonical/TAGGING_POLICY.md` for tag semantics.
+Platform tags use `vX.Y.Z`, GA releases use `vX.Y.Z-ga-core` or `vX.Y.Z-ga-portfolio`,
+and skill pack releases use `vX.Y.Z-skill-<name>`.
+
 ---
 
 ## [Unreleased]
@@ -376,6 +380,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 - **Senior Developer's Brain v1.0.0** — Major skill update with enhanced modes
 - Release workflow for skill pack distribution
+
+> **Tag Clarification**: The git tag `v1.0.0` created at this release refers to the
+> **Senior Developer's Brain skill pack**, NOT a platform GA release. The tag message
+> explicitly states "release: The Senior Developer's Brain v1.0.0" (commit `32b3549`).
+> See `docs/canonical/TAGGING_POLICY.md` for tag semantics. Under current policy,
+> this would be tagged as `v1.0.0-skill-sdb`.
 
 ---
 
